@@ -1,1 +1,68 @@
+name: Android Build
 
+on:
+  workflow_dispatch:
+    inputs:
+      allow_cleartext:
+        description: "Allow http traffic (debug only)"
+        type: boolean
+        default: true
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Verify project files
+        run: |
+          echo "PWD: $(pwd)"
+          ls -la
+          echo "--- src tree"
+          find src -type f | sort
+          for f in index.html package.json vite.config.ts src/main.ts src/App.vue; do
+            if [ ! -f "$f" ]; then echo "::error::MISSING FILE: $f"; MISSING=1; fi
+          done
+          [ -z "$MISSING" ] || exit 1
+          
+      - name: Build web assets
+        run: npm run build
+        
+      - name: Add Android platform
+        run: npx cap add android || true
+        
+      - name: Sync Capacitor
+        run: npx cap sync android
+        
+      - name: Allow cleartext traffic
+        if: ${{ inputs.allow_cleartext == true }}
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          if ! grep -q 'usesCleartextTraffic' "$MANIFEST"; then
+            sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
+          fi
+          
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+          
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifevault-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
