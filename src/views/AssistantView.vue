@@ -24,7 +24,7 @@ const visibleItems = computed(() => {
 });
 function parseReminder(text: string) {
   const now = new Date();
-  const match = text.match(/(?:يوم\s*)?(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{4})/);
+  const match = text.match(/(?:يوم\s*)?(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})/);
   let due: Date | null = null;
   if (match) {
     due = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]), 9, 0, 0);
@@ -32,7 +32,7 @@ function parseReminder(text: string) {
   } else if (/بكرة|غدًا|غدا/.test(text)) {
     due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0, 0);
   } else {
-    const days = text.match(/بعد\s+(\\d+)\s+أيام?/);
+    const days = text.match(/بعد\s+(\d+)\s+أيام?/);
     if (days) due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + Number(days[1]), 9, 0, 0);
   }
   if (!due || due.getTime() <= now.getTime()) return null;
