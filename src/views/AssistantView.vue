@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { pullAll, pushEncrypted } from "../services/api-client";
+import { Capacitor } from "@capacitor/core";
+import { LocalNotifications } from "@capacitor/local-notifications";
 
 interface MemoryItem {
   text: string;
@@ -83,9 +85,33 @@ async function confirmReminder() {
     const id = crypto.randomUUID();
     const data: MemoryItem = { text: r.title, category: detectCategory(r.title), createdAt: new Date().toISOString(), kind: "reminder", dueAt: r.dueAt, reminderStatus: "pending" };
     await pushEncrypted("memory", id, data, 0);
+    let notificationMessage = "تم حفظ التذكير مشفّرًا.";
+    if (Capacitor.isNativePlatform()) {
+      try {
+        let permission = await LocalNotifications.checkPermissions();
+        if (permission.display !== "granted") permission = await LocalNotifications.requestPermissions();
+        if (permission.display === "granted") {
+          await LocalNotifications.schedule({
+            notifications: [{
+              id: Math.floor(Date.now() % 2147483000),
+              title: "LifeVault AI",
+              body: "لديك تذكير مستحق. افتح خزنتك لمراجعته.",
+              schedule: { at: new Date(r.dueAt), allowWhileIdle: true }
+            }]
+          });
+          notificationMessage += " وتم جدولة إشعار محلي على هذا الجهاز.";
+        } else {
+          notificationMessage += " لم تسمح بإذن الإشعارات؛ يمكنك تفعيله من إعدادات الجهاز.";
+        }
+      } catch {
+        notificationMessage += " تعذرت جدولة الإشعار على هذا الجهاز.";
+      }
+    } else {
+      notificationMessage += " الإشعارات المجدولة تحتاج تشغيل التطبيق كنسخة هاتف (Android/iOS).";
+    }
     reminderDraft.value = null;
     draft.value = "";
-    notice.value = "تم حفظ التذكير مشفّرًا. تنبيه: لم يتم تفعيل إشعار تلقائي بعد.";
+    notice.value = notificationMessage;
     await load();
   } catch (e: any) { error.value = e?.message || "تعذر حفظ التذكير."; }
   finally { busy.value = false; }
@@ -101,7 +127,7 @@ onMounted(load);
       <label for="memory-input">ما الذي تريد أن تتذكره؟</label>
       <textarea id="memory-input" v-model="draft" rows="4" maxlength="5000" placeholder="مثال: فكرني بتجديد الجواز يوم 15/12/2027"></textarea>
       <div class="lv-capture-foot"><small>{{ draft.length }} / 5000</small><button class="lv-add" :disabled="!draft.trim() || busy" @click="saveMemory">{{ busy ? "جارٍ الحفظ..." : "احفظ في ذاكرتي ✦" }}</button></div>
-      <p class="lv-assistant-hint">إذا كتبت تاريخًا واضحًا، سيعرض المساعد اقتراح تذكير لتراجعه قبل الحفظ. لا تُرسل إشعارات تلقائية في هذه النسخة.</p>
+      <p class="lv-assistant-hint">إذا كتبت تاريخًا واضحًا، راجع التذكير قبل الحفظ. على نسخة الهاتف، سيطلب LifeVault إذن الإشعارات لجدولته محليًا؛ ويظهر نص عام يحافظ على خصوصية التفاصيل.</p>
     </section>
     <section v-if="reminderDraft" class="lv-capture lv-reminder-preview" aria-live="polite">
       <span class="lv-vault-kicker">REMINDER REVIEW</span><h2>هل تريد حفظ هذا كتذكير؟</h2>
