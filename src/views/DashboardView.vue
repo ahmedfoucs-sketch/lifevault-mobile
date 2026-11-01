@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { logout, getSession } from "../services/api-client";
 import { useVaultStore } from "../stores/vault";
 
 const router = useRouter();
 const vault = useVaultStore();
-
 const labels: Record<string, string> = {
-  vault: "الخزنة",
+  vault: "الخزنة الآمنة",
   family: "العائلة",
   link: "الروابط",
   memory: "الذكريات",
   settings: "الإعدادات",
 };
-
+const totalItems = computed(() => Object.values(vault.counts).reduce((sum, value) => sum + (Number(value) || 0), 0));
 onMounted(() => vault.load());
-
 function signOut() {
   logout();
   vault.clear();
@@ -25,41 +23,45 @@ function signOut() {
 </script>
 
 <template>
-  <main class="mx-auto max-w-xl space-y-6 p-4" dir="rtl">
-    <header class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">لوحة التحكم</h1>
-      <button class="rounded-lg border px-3 py-1 text-sm" @click="signOut">خروج</button>
+  <main class="lv-shell" dir="rtl">
+    <header class="lv-topbar">
+      <div class="lv-brand">
+        <div class="lv-brand-mark">L<span>V</span></div>
+        <div><strong>LifeVault <em>AI</em></strong><small>خزنتك الرقمية… ذاكرة حياتك</small></div>
+      </div>
+      <button class="lv-logout" @click="signOut" aria-label="تسجيل الخروج">خروج ↗</button>
     </header>
 
-    <p v-if="vault.error" class="rounded-lg bg-red-100 p-3 text-sm text-red-800">{{ vault.error }}</p>
-
-    <section class="grid grid-cols-2 gap-3">
-      <div
-        v-for="(label, type) in labels"
-        :key="type"
-        class="rounded-2xl border bg-white p-4 text-center"
-      >
-        <div class="text-3xl font-bold">{{ vault.counts[type] ?? 0 }}</div>
-        <div class="text-sm text-slate-500">{{ label }}</div>
+    <section class="lv-welcome">
+      <div class="lv-orb lv-orb-one"></div><div class="lv-orb lv-orb-two"></div>
+      <div class="lv-welcome-content">
+        <span class="lv-eyebrow"><i></i> مساحتك الشخصية الآمنة</span>
+        <h1>كل حياتك، <span>في مكان واحد.</span></h1>
+        <p>احفظ ما يهمك، نظّم تفاصيل حياتك، واسترجع ذكرياتك وقتما تحتاجها.</p>
+        <RouterLink to="/vault" class="lv-primary">افتح خزنتك <span>←</span></RouterLink>
       </div>
+      <div class="lv-hero-art" aria-hidden="true"><div class="lv-ring ring-a"></div><div class="lv-ring ring-b"></div><div class="lv-core">✦</div><span class="lv-spark spark-a">✧</span><span class="lv-spark spark-b">✦</span></div>
     </section>
 
-    <p class="text-center text-xs text-slate-400" dir="ltr">
-      sync_rev: {{ vault.syncRev }} · user: {{ getSession()?.userId }}
-    </p>
+    <p v-if="vault.error" class="lv-error" role="alert">{{ vault.error }}</p>
 
-    <nav class="grid gap-3">
-      <RouterLink to="/vault" class="rounded-xl bg-indigo-600 p-3 text-center text-white">
-        فتح الخزنة
-      </RouterLink>
-      <RouterLink to="/settings" class="rounded-xl border p-3 text-center">الإعدادات والأمان</RouterLink>
-      <button
-        class="rounded-xl border p-3 disabled:opacity-50"
-        :disabled="vault.loading"
-        @click="vault.load()"
-      >
-        {{ vault.loading ? "جارٍ المزامنة…" : "مزامنة الآن" }}
-      </button>
-    </nav>
+    <section class="lv-section-head">
+      <div><span class="lv-kicker">نظرة عامة</span><h2>مساحتك الرقمية</h2></div>
+      <button class="lv-sync" :disabled="vault.loading" @click="vault.load()"><span :class="{ 'lv-spin': vault.loading }">↻</span>{{ vault.loading ? "جارٍ التحديث" : "تحديث البيانات" }}</button>
+    </section>
+
+    <section class="lv-stats">
+      <article class="lv-stat lv-stat-featured"><div class="lv-stat-icon">▣</div><div class="lv-stat-number">{{ totalItems }}</div><div class="lv-stat-label">إجمالي العناصر المحفوظة</div><small>في مساحتك الخاصة</small></article>
+      <article v-for="(label, type) in labels" :key="type" class="lv-stat"><div class="lv-stat-icon">{{ type === 'vault' ? '◈' : type === 'family' ? '⌂' : type === 'link' ? '↗' : type === 'memory' ? '✧' : '⚙' }}</div><div class="lv-stat-number">{{ vault.counts[type] ?? 0 }}</div><div class="lv-stat-label">{{ label }}</div></article>
+    </section>
+
+    <section class="lv-section-head lv-shortcuts-head"><div><span class="lv-kicker">ابدأ من هنا</span><h2>الوصول السريع</h2></div></section>
+    <section class="lv-shortcuts">
+      <RouterLink to="/vault" class="lv-shortcut"><span class="lv-shortcut-icon">◈</span><span><b>الخزنة الآمنة</b><small>كلمات المرور والبيانات المهمة</small></span><i>←</i></RouterLink>
+      <RouterLink to="/assistant" class="lv-shortcut"><span class="lv-shortcut-icon">✦</span><span><b>مساعد LifeVault</b><small>احفظ أفكارك ومعلوماتك في ذاكرتك</small></span><i>←</i></RouterLink>
+      <RouterLink to="/settings" class="lv-shortcut"><span class="lv-shortcut-icon">⚙</span><span><b>الإعدادات والأمان</b><small>إدارة حسابك وحماية بياناتك</small></span><i>←</i></RouterLink>
+    </section>
+
+    <footer class="lv-footer"><span>✦ LifeVault AI</span><span>بياناتك ملكك · خصوصيتك أولويتنا</span><span dir="ltr">Sync {{ vault.syncRev }} · {{ getSession()?.userId }}</span></footer>
   </main>
 </template>

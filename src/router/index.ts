@@ -4,6 +4,7 @@ import LoginView from "../views/LoginView.vue";
 import DashboardView from "../views/DashboardView.vue";
 import VaultView from "../views/VaultView.vue";
 import SettingsView from "../views/SettingsView.vue";
+import AssistantView from "../views/AssistantView.vue";
 
 const router = createRouter({
   // Hash history: works inside the Capacitor WebView without server rewrites
@@ -14,6 +15,7 @@ const router = createRouter({
     { path: "/dashboard", name: "dashboard", component: DashboardView },
     { path: "/vault", name: "vault", component: VaultView },
     { path: "/settings", name: "settings", component: SettingsView },
+    { path: "/assistant", name: "assistant", component: AssistantView },
     { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
 });
