@@ -47,7 +47,7 @@ function parseReminder(text: string) {
     due = new Date(now.getFullYear(),now.getMonth(),now.getDate()+days,hour,minute,0,0);
   }
   if (!due || due.getTime() <= now.getTime()) return null;
-  const title = text.replace(/(?:فكرني|ذكرني|تذكير|موعد|لا تنسى|لا تنس|بكرة|غدًا|غدا|اليوم|النهارده|النهاردة|بعد\s+\d+\s+أيام?|بعد\s+ساعة|بعد\s+\d+\s+دقائق?|الساعة|ساعه|\d{1,2}[/\-]\d{1,2}[/\-]\d{4}|\d{1,2}(?::\d{2})?\s*(?:صباحًا|صباحا|مساءً|مساء|ص|م)?/g," ").replace(/\s+/g," ").trim() || text;
+  const title = text.replace(/(?:فكرني|ذكرني|تذكير|موعد|لا تنسى|لا تنس|بكرة|غدًا|غدا|اليوم|النهارده|النهاردة|بعد\s+\d+\s+أيام?|بعد\s+ساعة|بعد\s+\d+\s+دقائق?|الساعة|ساعه|\d{1,2}[/\-]\d{1,2}[/\-]\d{4}|\d{1,2}(?::\d{2})?\s*(?:صباحًا|صباحا|مساءً|مساء|ص|م)?)/g," ").replace(/\s+/g," ").trim() || text;
   return { title, dueAt: due.toISOString() };
 }
 function detectCategory(text: string) {
