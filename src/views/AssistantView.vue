@@ -17,15 +17,14 @@ const busy = ref(false);
 const error = ref("");
 const notice = ref("");
 const query = ref("");
-const reminderDraft = ref<{ title: string; dueAt: string; source: string } | null>(null);
-const reminderSaved = ref(false);
+const reminderDraft = ref<{ title: string; dueAt: string } | null>(null);
 const visibleItems = computed(() => {
   const q = query.value.trim().toLocaleLowerCase();
   return items.value.filter(x => x.data && (!q || (x.data.text + " " + x.data.category).toLocaleLowerCase().includes(q)));
 });
 function parseReminder(text: string) {
   const now = new Date();
-  const match = text.match(/(?:يوم\\s*)?(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{4})/);
+  const match = text.match(/(?:يوم\s*)?(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{4})/);
   let due: Date | null = null;
   if (match) {
     due = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]), 9, 0, 0);
@@ -33,12 +32,12 @@ function parseReminder(text: string) {
   } else if (/بكرة|غدًا|غدا/.test(text)) {
     due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0, 0);
   } else {
-    const days = text.match(/بعد\\s+(\\d+)\\s+أيام?/);
+    const days = text.match(/بعد\s+(\\d+)\s+أيام?/);
     if (days) due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + Number(days[1]), 9, 0, 0);
   }
   if (!due || due.getTime() <= now.getTime()) return null;
   const title = text.replace(/(?:فكرني|ذكرني|تذكير|موعد|لا تنسى|لا تنس)/g, "").trim() || text;
-  return { title, dueAt: due.toISOString(), source: text };
+  return { title, dueAt: due.toISOString() };
 }
 function detectCategory(text: string) {
   const s = text.toLocaleLowerCase();
@@ -60,7 +59,7 @@ async function load() {
 async function saveMemory() {
   const text = draft.value.trim();
   if (!text || busy.value) return;
-  busy.value = true; error.value = ""; notice.value = ""; reminderSaved.value = false;
+  busy.value = true; error.value = ""; notice.value = "";
   try {
     const reminder = parseReminder(text);
     if (reminder) {
@@ -86,7 +85,6 @@ async function confirmReminder() {
     await pushEncrypted("memory", id, data, 0);
     reminderDraft.value = null;
     draft.value = "";
-    reminderSaved.value = true;
     notice.value = "تم حفظ التذكير مشفّرًا. تنبيه: لم يتم تفعيل إشعار تلقائي بعد.";
     await load();
   } catch (e: any) { error.value = e?.message || "تعذر حفظ التذكير."; }
@@ -101,7 +99,7 @@ onMounted(load);
     <section class="lv-assistant-hero"><span class="lv-vault-kicker">YOUR PERSONAL MEMORY</span><h1>مساعد <span>LifeVault</span></h1><p>اكتب أي معلومة تريد الاحتفاظ بها. سنصنفها مبدئيًا ونحفظها مشفّرة في ذاكرتك.</p><div class="lv-assistant-badge">✦ حفظ خاص ومشفّر من جهازك</div></section>
     <section class="lv-capture">
       <label for="memory-input">ما الذي تريد أن تتذكره؟</label>
-      <textarea id="memory-input" v-model="draft" rows="4" maxlength="5000" placeholder="مثال: موعد تجديد جواز السفر يوم 15 ديسمبر..."></textarea>
+      <textarea id="memory-input" v-model="draft" rows="4" maxlength="5000" placeholder="مثال: فكرني بتجديد الجواز يوم 15/12/2027"></textarea>
       <div class="lv-capture-foot"><small>{{ draft.length }} / 5000</small><button class="lv-add" :disabled="!draft.trim() || busy" @click="saveMemory">{{ busy ? "جارٍ الحفظ..." : "احفظ في ذاكرتي ✦" }}</button></div>
       <p class="lv-assistant-hint">إذا كتبت تاريخًا واضحًا، سيعرض المساعد اقتراح تذكير لتراجعه قبل الحفظ. لا تُرسل إشعارات تلقائية في هذه النسخة.</p>
     </section>
