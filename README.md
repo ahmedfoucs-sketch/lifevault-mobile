@@ -5,3 +5,4 @@
 3. Actions -> "Android Build" -> Run workflow. APK = artifact `lifevault-debug-apk`.
 4. Recommended: run `npm install` once and commit the generated package-lock.json
    (the workflow uses `npm ci` when it exists, `npm install` otherwise).
+   Test Webhook Connection
