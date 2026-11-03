@@ -75,4 +75,5 @@ This repository inspection does not establish that LifeVault requires a paid sub
 
 - 2026-11-03: Created this audit on branch `personal-commander-phase0-audit`.
 - 2026-11-03: Inspected repository root, package manifest, app routes, login view, dashboard, vault store, API client, crypto primitives, settings, and release-readiness notes.
-- 2026-11-03: Added `src/views/CommanderView.vue`, registered the protected `/commander` route, made it the post-login landing route, and added a dashboard shortcut. Existing authentication and encryption code were not changed.\n- 2026-11-03: No production data, secrets, account settings, or `main` branch files were changed.
+- 2026-11-03: Added `src/views/CommanderView.vue`, registered the protected `/commander` route, made it the post-login landing route, and added a dashboard shortcut. Existing authentication and encryption code were not changed.
+- 2026-11-03: No production data, secrets, account settings, or `main` branch files were changed.
