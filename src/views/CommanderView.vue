@@ -41,7 +41,7 @@ onMounted(load);
   <main class="pc-shell" dir="rtl">
     <header class="pc-header">
       <RouterLink to="/dashboard" class="pc-brand"><span class="pc-mark">✦</span><span><b>PERSONAL <em>COMMANDER</em></b><small>مركز القيادة الشخصية</small></span></RouterLink>
-      <div class="pc-header-actions"><span class="pc-secure"><i></i> جلسة LifeVault آمنة</span><RouterLink to="/settings" class="pc-settings">الإعدادات</RouterLink></div>
+      <div class="pc-header-actions"><span class="pc-secure"><i></i> جلسة LifeVault نشطة</span><RouterLink to="/settings" class="pc-settings">الإعدادات</RouterLink></div>
     </header>
 
     <section class="pc-hero">
@@ -49,7 +49,7 @@ onMounted(load);
       <div class="pc-orbit" aria-hidden="true"><div class="pc-orbit-ring"></div><div class="pc-orbit-core">PC</div><span>✧</span></div>
     </section>
 
-    <section class="pc-section-title"><div><small>OVERVIEW</small><h2>نظرة عامة</h2></div><span class="pc-live"><i></i> متصل بحساب {{ getSession()?.userId }}</span></section>
+    <section class="pc-section-title"><div><small>OVERVIEW</small><h2>نظرة عامة</h2></div><span class="pc-live"><i></i> جلسة مشفّرة نشطة</span></section>
     <section class="pc-metrics">
       <article class="pc-metric pc-metric-main"><span>التذكيرات النشطة</span><strong>{{ loading ? "—" : pending.length }}</strong><small>من بيانات الذاكرة المشفّرة</small></article>
       <article class="pc-metric"><span>المستندات</span><strong>—</strong><small>قسم الخزنة متاح · التصنيف قيد التطوير</small></article>
