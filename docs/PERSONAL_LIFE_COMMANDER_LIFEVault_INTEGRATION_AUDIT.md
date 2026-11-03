@@ -8,7 +8,7 @@
 
 ## Executive decision
 
-Use LifeVault AI as the secure data/vault foundation for PERSONAL LIFE COMMANDER, but do **not** make the Commander dependent on a forced LifeVault sign-in for its first usable experience. The Commander needs a low-friction operational shell and a clearly defined optional/secure vault integration path. Existing LifeVault authentication and encryption must remain intact.
+Use LifeVault AI as the secure data/vault foundation for PERSONAL LIFE COMMANDER. The initial Commander shell is protected by the app's existing LifeVault login and preserves the existing authentication and encryption behavior; reducing repeated sign-in friction is deferred until the backend/session security model is reviewed.
 
 ## Repository facts observed
 
@@ -43,11 +43,14 @@ This repository inspection does not establish that LifeVault requires a paid sub
 - Establish a safe test account and disposable test dataset; no real personal data.
 
 ### P1 — PERSONAL LIFE COMMANDER shell
-- Add a Commander overview as a first-class route within the existing Vue app.
-- Keep the existing LifeVault login/vault routes available; avoid duplicating the app or replacing the current vault.
-- Build the initial modules as structured records: tasks/reminders, documents metadata, commitments/installments, assets, meetings, and reports.
-- Start with local/demo data or a dedicated test backend until the security review passes.
-- Keep Arabic RTL and English LTR, responsive desktop/mobile layout.
+- [x] Add `CommanderView.vue` as a first-class protected route at `/commander`.
+- [x] Make `/` open the Commander after authentication; preserve the existing LifeVault dashboard, vault, settings, and assistant routes.
+- [x] Add a dashboard entry point to the Commander.
+- [x] Build a responsive Arabic RTL shell with overview metrics, module roadmap, quick links, and a read-only list of existing encrypted reminders.
+- [ ] Implement versioned structured records for documents, commitments/installments, assets, meetings, and reports only after backend/data-contract review.
+- [ ] Verify production build/typecheck and run browser/device tests.
+
+**Implementation boundary:** The first shell reads existing `memory` records only to display reminders. It does not create a parallel financial/document database, write new sensitive record types, or claim placeholder module metrics are real.
 
 ### P2 — Secure persistence and automation
 - Define versioned schemas and access rules before storing sensitive records.
