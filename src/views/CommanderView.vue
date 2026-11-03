@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { getSession } from "../services/api-client";
 import { pullAll } from "../services/api-client";
 
 interface CommanderReminder {
