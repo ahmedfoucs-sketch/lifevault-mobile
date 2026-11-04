@@ -1,123 +1,70 @@
 /**
- * api-client.ts — LifeVault AI API client.
- * prelogin / login / 2FA / sync. All crypto is delegated to lv-crypto.ts.
- * API_BASE already ends with /api/v1, so paths below are relative to it.
+ * LifeVault local-first client.
+ * Account metadata and encrypted records stay in this browser's IndexedDB.
+ * The master password and DEK are never persisted; records are AES-GCM encrypted.
  */
 import {
-  deriveMasterKey,
-  deriveAuthKey,
-  deriveKekPw,
-  unwrapDek,
-  encryptItem,
-  decryptItem,
-  fromB64,
-  toB64,
-  wipe,
+  deriveMasterKey, deriveKekPw, generateDek, wrapDek, unwrapDek,
+  encryptItem, decryptItem, fromB64, toB64, wipe, KDF_ITERATIONS,
   type ItemType,
 } from "../crypto/lv-crypto";
+import { createLocalAccount, getLocalAccount, listLocalItems, saveLocalItem } from "./local-db";
 
+export const LOCAL_ONLY_MODE = true;
 export const API_BASE: string =
   (import.meta as any).env?.VITE_API_BASE || "http://127.0.0.1:8001/api/v1";
 
-/* ---------- Endpoint paths (relative to API_BASE) ---------- */
 export const PATH = {
-  prelogin: "/auth/prelogin",
-  login: "/auth/login",
-  twoFaSetup: "/auth/2fa/setup", // POST, no body -> { secret, otpauth_uri }
-  twoFaEnable: "/auth/2fa/enable", // POST { code }
-  twoFaDisable: "/auth/2fa/disable", // POST { auth_key, code }
-  passwordForgot: "/auth/password/forgot",
-  passwordBegin: "/auth/password/begin",
-  passwordReset: "/auth/password/reset",
-  syncPush: "/sync/push",
-  syncPull: "/sync/pull",
-  // UNVERIFIED: no known endpoint stores a new recovery-wrapped DEK for a
-  // logged-in user. Confirm against auth_routes.py before relying on it.
-  recoveryRotate: "/auth/recovery/rotate",
+  prelogin: "/auth/prelogin", login: "/auth/login",
+  twoFaSetup: "/auth/2fa/setup", twoFaEnable: "/auth/2fa/enable",
+  twoFaDisable: "/auth/2fa/disable", passwordForgot: "/auth/password/forgot",
+  passwordBegin: "/auth/password/begin", passwordReset: "/auth/password/reset",
+  syncPush: "/sync/push", syncPull: "/sync/pull", recoveryRotate: "/auth/recovery/rotate",
 } as const;
 
-/* ---------- Types ---------- */
 export interface PreloginResponse {
-  kdf_algo: "pbkdf2-sha256";
-  kdf_salt: string;
-  kdf_iterations: number;
+  kdf_algo: "pbkdf2-sha256"; kdf_salt: string; kdf_iterations: number;
 }
-
 export interface LoginResponse {
-  user_id: string;
-  key_version: number;
-  sync_rev: number;
-  wrapped_dek_pw: string;
-  access_token: string;
-  [k: string]: unknown;
+  user_id: string; key_version: number; sync_rev: number;
+  wrapped_dek_pw: string; access_token: string; [k: string]: unknown;
 }
-
 export interface PushItem {
-  item_id: string;
-  item_type: ItemType;
-  ciphertext: string;
-  base_revision: number;
-  deleted: boolean;
+  item_id: string; item_type: ItemType; ciphertext: string;
+  base_revision: number; deleted: boolean;
 }
-
 export interface PullItem {
-  item_id: string;
-  item_type?: ItemType;
-  ciphertext: string;
-  revision: number;
-  deleted?: boolean;
-  [k: string]: unknown;
+  item_id: string; item_type?: ItemType; ciphertext: string;
+  revision: number; deleted?: boolean; [k: string]: unknown;
 }
-
-export interface PullResponse {
-  sync_rev: number;
-  items: PullItem[];
-}
+export interface PullResponse { sync_rev: number; items: PullItem[]; }
 
 export class ApiError extends Error {
   constructor(public status: number, public body: unknown, message?: string) {
     super(message ?? `API error ${status}`);
   }
 }
-
-/* ---------- Session (memory only; DEK is never persisted) ---------- */
 interface Session {
-  accessToken: string;
-  userId: string;
-  keyVersion: number;
-  syncRev: number;
-  dek: Uint8Array;
+  accessToken: string; userId: string; keyVersion: number; syncRev: number; dek: Uint8Array;
 }
 let session: Session | null = null;
-
 export const isLoggedIn = () => session !== null;
 export const getSession = () => session;
-
 export function logout() {
   if (session) wipe(session.dek);
   session = null;
 }
 
-/* ---------- HTTP ---------- */
 const safeJson = (t: string): unknown => {
-  try {
-    return JSON.parse(t);
-  } catch {
-    return t;
-  }
+  try { return JSON.parse(t); } catch { return t; }
 };
-
-export async function request<T>(
-  path: string,
-  init: RequestInit & { auth?: boolean } = {}
-): Promise<T> {
+export async function request<T>(path: string, init: RequestInit & { auth?: boolean } = {}): Promise<T> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((init.headers as Record<string, string>) ?? {}),
+    "Content-Type": "application/json", ...((init.headers as Record<string, string>) ?? {}),
   };
   if (init.auth) {
     if (!session) throw new ApiError(401, null, "Not authenticated");
-    headers["Authorization"] = `Bearer ${session.accessToken}`;
+    headers.Authorization = `Bearer ${session.accessToken}`;
   }
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
   const text = await res.text();
@@ -126,139 +73,110 @@ export async function request<T>(
   return body as T;
 }
 
-/* ---------- Auth ---------- */
-export const prelogin = (email: string) =>
-  request<PreloginResponse>(PATH.prelogin, { method: "POST", body: JSON.stringify({ email }) });
+export interface DeviceInfo { name: string; platform: string; }
 
-export interface DeviceInfo {
-  name: string;
-  platform: string;
-}
+/** Create the first local account. Only a salt and password-wrapped DEK are stored. */
+export async function registerLocal(emailInput: string, password: string): Promise<void> {
+  const email = emailInput.trim().toLowerCase();
+  if (!email || !email.includes("@")) throw new Error("أدخل بريدًا إلكترونيًا صحيحًا.");
+  if (password.length < 12) throw new Error("كلمة المرور الرئيسية يجب ألا تقل عن 12 حرفًا.");
+  if (await getLocalAccount(email)) throw new Error("يوجد حساب بهذا البريد على هذا الجهاز. سجّل الدخول بدلًا من إنشاء حساب جديد.");
 
-/** prelogin -> derive keys locally -> login -> unwrap DEK. Server only sees auth_key. */
-export async function login(
-  email: string,
-  password: string,
-  device: DeviceInfo,
-  totpCode?: string
-): Promise<LoginResponse> {
-  const pre = await prelogin(email);
-  const master = await deriveMasterKey(password, fromB64(pre.kdf_salt), pre.kdf_iterations);
-  const authKey = await deriveAuthKey(master);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const master = await deriveMasterKey(password, salt, KDF_ITERATIONS);
   const kek = await deriveKekPw(master);
-
-  const body: Record<string, unknown> = { email, auth_key: toB64(authKey), device };
-  if (totpCode) body.totp_code = totpCode;
-
-  let resp: LoginResponse;
+  const dek = generateDek();
   try {
-    resp = await request<LoginResponse>(PATH.login, { method: "POST", body: JSON.stringify(body) });
-  } catch (e) {
-    wipe(master, kek);
-    throw e;
-  } finally {
-    wipe(authKey);
-  }
-
-  const dek = await unwrapDek(resp.wrapped_dek_pw, kek, "pw");
-  wipe(master, kek);
-
-  session = {
-    accessToken: resp.access_token,
-    userId: resp.user_id,
-    keyVersion: resp.key_version,
-    syncRev: resp.sync_rev,
-    dek,
-  };
-  return resp;
-}
-
-/* ---------- 2FA ---------- */
-export async function setup2FA(): Promise<{ secret: string; otpauthUri: string }> {
-  const r = await request<any>(PATH.twoFaSetup, { method: "POST", auth: true });
-  return { secret: r.secret, otpauthUri: r.otpauth_uri ?? r.otpauthUri ?? "" };
-}
-
-/** Response field name for backup codes is assumed: backup_codes | backupCodes | recovery_codes. */
-export async function enable2FA(code: string): Promise<{ backupCodes: string[] }> {
-  const r = await request<any>(PATH.twoFaEnable, {
-    method: "POST",
-    auth: true,
-    body: JSON.stringify({ code }),
-  });
-  return { backupCodes: r?.backup_codes ?? r?.backupCodes ?? r?.recovery_codes ?? [] };
-}
-
-/** Disabling requires proof of the password: re-derive auth_key locally. */
-export async function disable2FA(email: string, password: string, code: string) {
-  const pre = await prelogin(email);
-  const master = await deriveMasterKey(password, fromB64(pre.kdf_salt), pre.kdf_iterations);
-  const authKey = await deriveAuthKey(master);
-  try {
-    return await request<unknown>(PATH.twoFaDisable, {
-      method: "POST",
-      auth: true,
-      body: JSON.stringify({ auth_key: toB64(authKey), code }),
+    const wrappedDek = await wrapDek(dek, kek, "pw");
+    await createLocalAccount({
+      email, salt: toB64(salt), iterations: KDF_ITERATIONS,
+      wrappedDek, createdAt: new Date().toISOString(),
     });
   } finally {
-    wipe(master, authKey);
+    wipe(master, kek, dek, salt);
   }
 }
 
-/* ---------- Sync ---------- */
-export async function syncPush(items: PushItem[]) {
-  if (!session) throw new ApiError(401, null, "Not authenticated");
-  return request<Record<string, unknown>>(PATH.syncPush, {
-    method: "POST",
-    auth: true,
-    body: JSON.stringify({ key_version: session.keyVersion, items }),
-  });
+/** Unlock the local account. No network request or password transmission occurs. */
+export async function login(
+  emailInput: string, password: string, _device: DeviceInfo, _totpCode?: string
+): Promise<LoginResponse> {
+  const email = emailInput.trim().toLowerCase();
+  const account = await getLocalAccount(email);
+  if (!account) throw new Error("لا يوجد حساب محلي بهذا البريد. اختر إنشاء حساب جديد أولًا.");
+  const master = await deriveMasterKey(password, fromB64(account.salt), account.iterations);
+  const kek = await deriveKekPw(master);
+  wipe(master);
+  let dek: Uint8Array;
+  try {
+    dek = await unwrapDek(account.wrappedDek, kek, "pw");
+  } catch {
+    wipe(kek);
+    throw new Error("كلمة المرور الرئيسية غير صحيحة.");
+  }
+  wipe(kek);
+  session = { accessToken: "local-only", userId: email, keyVersion: 1, syncRev: 0, dek };
+  return {
+    user_id: email, key_version: 1, sync_rev: 0,
+    wrapped_dek_pw: account.wrappedDek, access_token: "local-only",
+  };
 }
 
-/** Encrypt a plaintext object and push it. */
+/* Local-only mode deliberately does not pretend that cloud 2FA or recovery is configured. */
+export async function setup2FA(): Promise<{ secret: string; otpauthUri: string }> {
+  throw new Error("المصادقة الثنائية غير متاحة في وضع التخزين المحلي. لم يتم تفعيلها.");
+}
+export async function enable2FA(_code: string): Promise<{ backupCodes: string[] }> {
+  throw new Error("المصادقة الثنائية غير متاحة في وضع التخزين المحلي.");
+}
+export async function disable2FA(_email: string, _password: string, _code: string) {
+  throw new Error("المصادقة الثنائية غير متاحة في وضع التخزين المحلي.");
+}
+
+export async function syncPush(items: PushItem[]) {
+  if (!session) throw new ApiError(401, null, "Not authenticated");
+  for (const item of items) {
+    const key = `${session.userId}|${item.item_type}|${item.item_id}`;
+    await saveLocalItem({
+      key, email: session.userId, id: item.item_id, type: item.item_type,
+      ciphertext: item.ciphertext, revision: item.base_revision + 1,
+      deleted: item.deleted, updatedAt: new Date().toISOString(),
+    });
+    session.syncRev += 1;
+  }
+  return { sync_rev: session.syncRev };
+}
+
 export async function pushEncrypted(
-  type: ItemType,
-  id: string,
-  payload: unknown,
-  baseRevision: number,
-  deleted = false
+  type: ItemType, id: string, payload: unknown, baseRevision: number, deleted = false
 ) {
   if (!session) throw new ApiError(401, null, "Not authenticated");
   const ciphertext = await encryptItem(session.dek, type, id, deleted ? {} : payload);
-  return syncPush([{ item_id: id, item_type: type, ciphertext, base_revision: baseRevision, deleted }]);
+  return syncPush([{
+    item_id: id, item_type: type, ciphertext,
+    base_revision: baseRevision, deleted,
+  }]);
 }
 
-export const syncPull = (since: number, limit = 200) =>
-  request<PullResponse>(`${PATH.syncPull}?since=${since}&limit=${limit}`, { auth: true });
+export const syncPull = async (_since: number, _limit = 200): Promise<PullResponse> => {
+  throw new Error("المزامنة السحابية غير مفعّلة في إصدار التخزين المحلي.");
+};
 
 export interface DecryptedItem<T = unknown> {
-  id: string;
-  type: ItemType;
-  revision: number;
-  deleted: boolean;
-  data: T | null;
+  id: string; type: ItemType; revision: number; deleted: boolean; data: T | null;
 }
 
-/** Pull everything since `since`, paging until drained, decrypting each item. */
-export async function pullAll<T = unknown>(since = 0, pageSize = 200) {
+/** Read and decrypt the current account's records from IndexedDB. */
+export async function pullAll<T = unknown>(_since = 0, _pageSize = 200) {
   if (!session) throw new ApiError(401, null, "Not authenticated");
+  const records = await listLocalItems(session.userId);
   const out: DecryptedItem<T>[] = [];
-  let cursor = since;
-  let latest = since;
-
-  for (let guard = 0; guard < 10_000; guard++) {
-    const page = await syncPull(cursor, pageSize);
-    for (const it of page.items) {
-      const type = (it.item_type ?? "vault") as ItemType;
-      let data: T | null = null;
-      if (!it.deleted && it.ciphertext) {
-        data = await decryptItem<T>(session.dek, type, it.item_id, it.ciphertext);
-      }
-      out.push({ id: it.item_id, type, revision: it.revision, deleted: !!it.deleted, data });
-      cursor = Math.max(cursor, it.revision);
-    }
-    latest = Math.max(latest, page.sync_rev);
-    if (page.items.length < pageSize || cursor >= page.sync_rev) break;
+  let latest = 0;
+  for (const item of records) {
+    const type = item.type as ItemType;
+    const data = item.deleted ? null : await decryptItem<T>(session.dek, type, item.id, item.ciphertext);
+    out.push({ id: item.id, type, revision: item.revision, deleted: item.deleted, data });
+    latest = Math.max(latest, item.revision);
   }
   session.syncRev = latest;
   return { items: out, syncRev: latest };
