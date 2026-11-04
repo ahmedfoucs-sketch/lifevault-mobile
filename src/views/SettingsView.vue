@@ -73,8 +73,7 @@ async function confirmTotp() {
 }
 
 function copyBackup() {
-  navigator.clipboard?.writeText(backupCodes.value.join("
-"));
+  navigator.clipboard?.writeText(backupCodes.value.join("\n"));
   message.value = "تم نسخ الأكواد الاحتياطية.";
 }
 
