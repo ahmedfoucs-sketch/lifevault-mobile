@@ -58,6 +58,7 @@ function signOut() {
     <section class="lv-section-head lv-shortcuts-head"><div><span class="lv-kicker">ابدأ من هنا</span><h2>الوصول السريع</h2></div></section>
     <section class="lv-shortcuts">
       <RouterLink to="/vault" class="lv-shortcut"><span class="lv-shortcut-icon">◈</span><span><b>الخزنة الآمنة</b><small>كلمات المرور والبيانات المهمة</small></span><i>←</i></RouterLink>
+      <RouterLink to="/memory" class="lv-shortcut"><span class="lv-shortcut-icon">✧</span><span><b>ذاكرتك الثانية</b><small>صنّف ذكرياتك، اربطها، وابحث فيها</small></span><i>←</i></RouterLink>
       <RouterLink to="/assistant" class="lv-shortcut"><span class="lv-shortcut-icon">✦</span><span><b>مساعد LifeVault</b><small>احفظ أفكارك ومعلوماتك في ذاكرتك</small></span><i>←</i></RouterLink>
       <RouterLink to="/settings" class="lv-shortcut"><span class="lv-shortcut-icon">⚙</span><span><b>الإعدادات والأمان</b><small>إدارة حسابك وحماية بياناتك</small></span><i>←</i></RouterLink>
     </section>
