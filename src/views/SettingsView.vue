@@ -9,7 +9,7 @@ import {
   toB64,
   wipe,
 } from "../crypto/lv-crypto";
-import { getSession, request, setup2FA, enable2FA, PATH } from "../services/api-client";
+import { LOCAL_ONLY_MODE, getSession, request, setup2FA, enable2FA, PATH } from "../services/api-client";
 
 /* ---------- 2FA ---------- */
 const totpSecret = ref("");
@@ -128,7 +128,7 @@ function copyRecovery() {
     <p v-if="message" class="rounded-lg bg-green-100 p-3 text-green-800">{{ message }}</p>
     <p v-if="error" class="rounded-lg bg-red-100 p-3 text-red-800">{{ error }}</p>
 
-    <!-- 2FA -->
+    <section v-if="LOCAL_ONLY_MODE" class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">\n      <h2 class="font-semibold">حماية الخزنة على هذا الجهاز</h2>\n      <p>هذا الإصدار يعمل محليًا دون خادم. التشفير وكلمة المرور يعملان على هذا الجهاز، بينما المصادقة الثنائية السحابية ومزامنة الأجهزة ومفتاح الاستعادة غير مفعّلة بعد. لا تعرض الواجهة هذه الوظائف كأنها مفعّلة.</p>\n      <p class="mt-2 font-semibold">احتفظ بنسخة احتياطية من بيانات المتصفح؛ حذف بيانات الموقع قد يؤدي إلى فقدان الخزنة.</p>\n    </section>\n    <template v-if="!LOCAL_ONLY_MODE">\n    <!-- 2FA -->
     <section class="space-y-3 rounded-2xl border p-4">
       <h2 class="text-lg font-semibold">المصادقة الثنائية (2FA)</h2>
 
