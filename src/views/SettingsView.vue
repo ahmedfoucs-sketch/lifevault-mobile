@@ -248,5 +248,6 @@ function copyRecovery() {
         </button>
       </div>
     </section>
+    </template>
   </div>
 </template>
