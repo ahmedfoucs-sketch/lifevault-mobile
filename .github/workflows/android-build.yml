@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       allow_cleartext:
-        description: "Allow HTTP traffic (debug only; keep disabled unless explicitly needed)"
+        description: "Allow HTTP traffic for a temporary debug build only"
         type: boolean
         default: false
   push:
@@ -45,7 +45,23 @@ jobs:
             fi
           done
 
+      - name: Require production API URL
+        env:
+          LIFEVAULT_API_BASE: ${{ vars.LIFEVAULT_API_BASE }}
+        run: |
+          if [ -z "$LIFEVAULT_API_BASE" ]; then
+            echo "::error::Set the repository Actions variable LIFEVAULT_API_BASE to the public HTTPS API base ending in /api/v1."
+            exit 1
+          fi
+          case "$LIFEVAULT_API_BASE" in
+            https://*) ;;
+            *) echo "::error::LIFEVAULT_API_BASE must use HTTPS."; exit 1 ;;
+          esac
+
       - name: Build web assets
+        env:
+          VITE_API_BASE: ${{ vars.LIFEVAULT_API_BASE }}
+          VITE_ALLOW_INSECURE: ${{ inputs.allow_cleartext }}
         run: npm run build
 
       - name: Add Android platform when absent
