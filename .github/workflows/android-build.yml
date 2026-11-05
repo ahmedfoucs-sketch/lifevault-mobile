@@ -53,10 +53,17 @@ jobs:
             echo "::error::Set the repository Actions variable LIFEVAULT_API_BASE to the public HTTPS API base ending in /api/v1."
             exit 1
           fi
-          case "$LIFEVAULT_API_BASE" in
-            https://*) ;;
-            *) echo "::error::LIFEVAULT_API_BASE must use HTTPS."; exit 1 ;;
-          esac
+          if [ "${{ inputs.allow_cleartext }}" = "true" ]; then
+            case "$LIFEVAULT_API_BASE" in
+              https://*|http://*) ;;
+              *) echo "::error::LIFEVAULT_API_BASE must be a valid HTTP(S) URL."; exit 1 ;;
+            esac
+          else
+            case "$LIFEVAULT_API_BASE" in
+              https://*) ;;
+              *) echo "::error::LIFEVAULT_API_BASE must use HTTPS unless the debug-only cleartext option is enabled."; exit 1 ;;
+            esac
+          fi
 
       - name: Build web assets
         env:
