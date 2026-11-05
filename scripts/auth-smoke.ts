@@ -1,15 +1,16 @@
 // Real-backend login + encrypted sync smoke test. Test credentials are read from env only.
 // Run: LIFEVAULT_API_BASE=https://.../api/v1 LV_TEST_EMAIL=... LV_TEST_PASSWORD=... npx --yes tsx scripts/auth-smoke.ts
-import { login, pullAll, logout, API_TARGET } from "../src/services/api-client";
-
+const apiBase = process.env.LIFEVAULT_API_BASE;
 const email = process.env.LV_TEST_EMAIL;
 const password = process.env.LV_TEST_PASSWORD;
-const apiBase = process.env.LIFEVAULT_API_BASE;
 
 if (!email || !password || !apiBase) {
   console.error("SKIPPED: set LIFEVAULT_API_BASE, LV_TEST_EMAIL and LV_TEST_PASSWORD.");
   process.exit(2);
 }
+process.env.VITE_API_BASE = apiBase;
+
+const { login, pullAll, logout, API_TARGET } = await import("../src/services/api-client");
 if (API_TARGET.error) {
   console.error("FAIL: API configuration:", API_TARGET.error);
   process.exit(1);
