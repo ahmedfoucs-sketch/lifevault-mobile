@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, lifevault-premium-ui]
+    branches: [main, lifevault-premium-ui, 'personal-commander-*']
 
 permissions:
   contents: read
@@ -21,6 +21,11 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Report dependency audit summary
+        run: |
+          npm audit --json > /tmp/npm-audit.json || true
+          node -e 'const a=require("/tmp/npm-audit.json"); const v=Object.entries(a.vulnerabilities||{}).map(([name,x])=>({name,severity:x.severity,range:x.range,fixAvailable:x.fixAvailable,via:(x.via||[]).map(y=>typeof y==="string"?y:{name:y.name,title:y.title,url:y.url,range:y.range,severity:y.severity})})); console.log(JSON.stringify({counts:a.metadata?.vulnerabilities,packages:v},null,2));'
+
       - name: TypeScript and Vue type check
         run: npm run typecheck
       - name: Production build

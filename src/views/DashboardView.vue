@@ -3,9 +3,11 @@ import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { logout, getSession } from "../services/api-client";
 import { useVaultStore } from "../stores/vault";
+import { useMemoryStore } from "../stores/memory";
 
 const router = useRouter();
 const vault = useVaultStore();
+const memory = useMemoryStore();
 const labels: Record<string, string> = {
   vault: "الخزنة الآمنة",
   family: "العائلة",
@@ -18,6 +20,7 @@ onMounted(() => vault.load());
 function signOut() {
   logout();
   vault.clear();
+  memory.clear();
   router.replace({ name: "login" });
 }
 </script>
@@ -56,7 +59,9 @@ function signOut() {
     </section>
 
     <section class="lv-section-head lv-shortcuts-head"><div><span class="lv-kicker">ابدأ من هنا</span><h2>الوصول السريع</h2></div></section>
-    <section class="lv-shortcuts">\n      <RouterLink to="/commander" class="lv-shortcut"><span class="lv-shortcut-icon">✦</span><span><b>مركز القيادة الشخصية</b><small>إدارة حياتك والتزاماتك من مكان واحد</small></span><i>←</i></RouterLink>
+    <section class="lv-shortcuts">
+      <RouterLink to="/commander" class="lv-shortcut"><span class="lv-shortcut-icon">✦</span><span><b>مركز القيادة الشخصية</b><small>إدارة حياتك والتزاماتك من مكان واحد</small></span><i>←</i></RouterLink>
+      <RouterLink to="/memory" class="lv-shortcut"><span class="lv-shortcut-icon">✧</span><span><b>ذاكرتك الثانية</b><small>التقاط وتصنيف واسترجاع الذكريات</small></span><i>←</i></RouterLink>
       <RouterLink to="/vault" class="lv-shortcut"><span class="lv-shortcut-icon">◈</span><span><b>الخزنة الآمنة</b><small>كلمات المرور والبيانات المهمة</small></span><i>←</i></RouterLink>
       <RouterLink to="/assistant" class="lv-shortcut"><span class="lv-shortcut-icon">✦</span><span><b>مساعد LifeVault</b><small>احفظ أفكارك ومعلوماتك في ذاكرتك</small></span><i>←</i></RouterLink>
       <RouterLink to="/settings" class="lv-shortcut"><span class="lv-shortcut-icon">⚙</span><span><b>الإعدادات والأمان</b><small>إدارة حسابك وحماية بياناتك</small></span><i>←</i></RouterLink>

@@ -63,7 +63,7 @@ async function load() {
   error.value="";
   try {
     const result=await pullAll<MemoryItem>(0);
-    items.value=result.items.filter(x=>x.type==="memory"&&!x.deleted&&x.data) as StoredItem[];
+    items.value=result.items.filter(x=>x.type==="memory"&&!x.deleted&&x.data&&!(x.data as MemoryItem & { commanderRecord?: boolean }).commanderRecord) as StoredItem[];
     items.value.sort((a,b)=>(a.data?.createdAt||"").localeCompare(b.data?.createdAt||"")*-1);
   } catch(e:any){error.value=e?.message||"تعذر تحميل الذكريات.";}
 }

@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - lifevault-premium-ui
+      - 'personal-commander-*'
     paths:
       - "src/**"
       - "public/**"
@@ -38,11 +39,29 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Require production API URL
+        env:
+          LIFEVAULT_API_BASE: ${{ vars.LIFEVAULT_API_BASE }}
+        run: |
+          if [ -z "$LIFEVAULT_API_BASE" ]; then
+            echo "::error::Set the repository Actions variable LIFEVAULT_API_BASE to the public HTTPS API base ending in /api/v1."
+            exit 1
+          fi
+          case "$LIFEVAULT_API_BASE" in
+            https://*) ;;
+            *) echo "::error::LIFEVAULT_API_BASE must use HTTPS."; exit 1 ;;
+          esac
+
       - name: Build web app
+        env:
+          VITE_API_BASE: ${{ vars.LIFEVAULT_API_BASE }}
         run: npm run build
 
-      - name: Generate Android project
-        run: npx cap add android
+      - name: Generate Android project when absent
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
 
       - name: Sync Capacitor plugins and assets
         run: npx cap sync android
@@ -51,7 +70,10 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Verify APK
+        run: test -s android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
