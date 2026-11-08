@@ -84,7 +84,12 @@ export async function hkdf(ikm: Uint8Array, info: string): Promise<Uint8Array> {
   );
 }
 
+function assertAes256Key(rawKey: Uint8Array) {
+  if (rawKey.length !== 32) throw new RangeError("AES-256 key must contain exactly 32 bytes");
+}
+
 export async function seal(rawKey: Uint8Array, data: Uint8Array, aad: string): Promise<Uint8Array> {
+  assertAes256Key(rawKey);
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const key = await crypto.subtle.importKey("raw", bs(rawKey), "AES-GCM", false, ["encrypt"]);
   const ct = new Uint8Array(
@@ -101,6 +106,7 @@ export async function seal(rawKey: Uint8Array, data: Uint8Array, aad: string): P
 }
 
 export async function open(rawKey: Uint8Array, blob: Uint8Array, aad: string): Promise<Uint8Array> {
+  assertAes256Key(rawKey);
   if (blob.length < IV_LENGTH + GCM_TAG_LENGTH_BYTES) {
     throw new Error("Invalid AES-GCM payload: truncated IV or authentication tag");
   }
@@ -130,11 +136,17 @@ export type WrapKind = "pw" | "recovery";
 
 /** Wrap the DEK under a KEK. Returns base64 (ready for the server). */
 export async function wrapDek(dek: Uint8Array, kek: Uint8Array, kind: WrapKind = "pw"): Promise<string> {
+  if (dek.length !== 32) throw new RangeError("DEK must contain exactly 32 bytes");
   return toB64(await seal(kek, dek, kind === "pw" ? AAD_DEK_PW : AAD_DEK_RECOVERY));
 }
 
 export async function unwrapDek(wrappedB64: string, kek: Uint8Array, kind: WrapKind = "pw"): Promise<Uint8Array> {
-  return open(kek, fromB64(wrappedB64), kind === "pw" ? AAD_DEK_PW : AAD_DEK_RECOVERY);
+  const dek = await open(kek, fromB64(wrappedB64), kind === "pw" ? AAD_DEK_PW : AAD_DEK_RECOVERY);
+  if (dek.length !== 32) {
+    wipe(dek);
+    throw new Error("Unwrapped DEK must contain exactly 32 bytes");
+  }
+  return dek;
 }
 
 /* ---------- Items ---------- */
