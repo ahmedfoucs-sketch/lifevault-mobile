@@ -188,3 +188,21 @@ Web CI and Android packaging are now green, but LifeVault is **not production-re
 - Run: https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42452705050.
 - This confirms Android debug packaging on the latest hardening head, not physical-device acceptance, real backend connectivity, iOS readiness or production security.
 - PR #8, PR #9 and PR #10 remain open draft/unmerged. No merge, production deployment, real-data change, secret/permission change or central repository modification was performed.
+
+
+## Addendum — backend recovery handoff and current documentation state, 2026-11-08
+
+- Latest hardening head advanced to `0b46d51a16eeb039b1121c61648194b283c9f7a8`. The intervening crypto change wipes transient plaintext byte buffers after encryption and decryption; a follow-up type correction keeps `decryptItem` aligned with the `ItemType` contract.
+- On that head, CI run #42454511670 and Android build-smoke run #42454511717 both completed SUCCESS. Android artifact ID `13607196295`, expires 2026-11-15; it uses the reserved `.invalid` API host and is packaging/UI-only.
+- Updated `AI_ENGINEER_CONTEXT.md` to remove stale vulnerability/lockfile blockers and record current PRs, verified tests and release gates.
+- Corrected `docs/ENVIRONMENTS_AND_API.md`: the production `VITE_ALLOW_INSECURE` bypass is removed; production/device builds require HTTPS and no fake endpoint is permitted.
+- Refreshed `docs/DEVICE_TEST_AND_RELEASE_READINESS.md` with the latest smoke run/artifact and clear separation between packaging and physical-device acceptance.
+- Added `docs/BACKEND_RECOVERY_AND_OWNER_HANDOFF.md` with the Windows recovery procedure, current API contract, safe source packaging rules, security acceptance checklist and operator responsibilities.
+- Recommended first resolver for the missing local backend: Claude Code on the user's Windows machine, because it can inspect the actual local filesystem/processes. ChatGPT/GitHub can review the sanitized source and contract tests; a human/hosting operator is still needed for endpoint/DNS/TLS/database access; physical Android/iOS acceptance requires real devices and platform tooling.
+- Latest documentation commits on the hardening branch are undergoing CI/Android smoke verification at time of checkpoint update. Do not mark those new doc commits green until their exact run IDs complete.
+- No backend source was recovered from the available repositories or Library as an authoritative current service. No real endpoint was configured, no secrets or personal data were changed, and no production service was accessed.
+
+### Immediate owner handoff
+1. Run the recovery checklist in `docs/BACKEND_RECOVERY_AND_OWNER_HANDOFF.md` from Claude Code on Windows; provide a sanitized report or private repository read access.
+2. Provide a physical Android device/tester for no-backend launch/UI smoke; defer login/sync until a secure disposable backend exists.
+3. Provide macOS/Xcode and signing authority only if iOS acceptance is required.
