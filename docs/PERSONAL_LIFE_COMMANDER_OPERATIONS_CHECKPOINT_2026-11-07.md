@@ -34,3 +34,31 @@ Tracking PR: #8
 - Add/verify a lockfile on a branch.
 - Run a debug Android build only after a valid HTTPS API base is available, then perform physical-device acceptance tests using dummy data.
 - Keep PR #8 unmerged until all release gates are evidenced.
+
+
+## Operational update — 2026-11-08
+
+### Verified current engineering state
+- Current hardening branch: `hardening/crypto-memory-tests-2026-11-08`.
+- PR #10 remains OPEN, DRAFT, mergeable, and unmerged; it is based on the Commander integration branch. No change to `main`.
+- Current PR #10 head at this update: `3e1f13ef0d2b8d1590a6692f53464458aeeb9e03`.
+- New branch-only hardening change: `encryptItem` now wipes its transient plaintext byte buffer in a `finally` block after encryption; `decryptItem` wipes its decrypted plaintext byte buffer in a `finally` block after JSON parsing, including parse-failure paths.
+- CI run #42454459533 on this head completed SUCCESS. Verified steps: committed lockfile, `npm ci`, dependency audit enforcement, Vue/TypeScript typecheck, unit tests, production build, lockfile artifact upload.
+- Android smoke run #42454459612 on this head was still IN PROGRESS at the time of this update; Gradle `assembleDebug` was running. Do not report it as passed until completion is checked.
+
+### Personal-data and backend status
+- No authoritative current backend source was found in the accessible GitHub repositories. The only Library result located for the backend is a historical export, not an authoritative current source.
+- Historical backend export is not approved for real data or production use; retain the existing security review and do not connect the client to its old port-8001 demo service.
+- No real HTTPS API endpoint, backend interoperability, tenant isolation, server-side MFA/session enforcement, encrypted sync, backup/restore drill, physical Android acceptance, or iOS acceptance has been verified.
+- The earlier Gmail search found a 2024 apartment-related thread with five receipt image attachments. Amounts inferred from filenames are unverified and are not entered as financial ledger records. Actual receipt review and reconciliation remain pending.
+- No private financial, family, identity, or document contents were added to this repository.
+
+### Remaining actions
+1. Recover the authoritative backend source from the authorized Windows workspace or an identified repository; current filesystem access is not available through this GitHub connection.
+2. Review and test backend authentication, tenant isolation, CORS, MFA, sessions, recovery, encrypted sync, audit and database migrations using disposable test data.
+3. Verify a real HTTPS endpoint and client/server contract before configuring any API base.
+4. Complete backup/restore testing and independent security review.
+5. Install the no-backend Android smoke APK on a physical device for launch/UI checks only; do not attempt login or sync.
+6. Perform physical-device end-to-end testing only after a secure disposable backend exists; iOS requires macOS/Xcode/signing access.
+7. Reconcile personal property receipts from actual attachment contents before recording payments or balances.
+8. Keep PR #8 and PR #10 draft/unmerged until release gates pass. No production deployment, real data mutation, secret change, permission change or auto-merge.
