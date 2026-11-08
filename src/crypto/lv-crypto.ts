@@ -166,7 +166,7 @@ export async function encryptItem(
 
 export async function decryptItem<T = unknown>(
   dek: Uint8Array,
-  type: string,
+  type: ItemType,
   id: string,
   ciphertextB64: string
 ): Promise<T> {
