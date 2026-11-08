@@ -23,5 +23,5 @@ export function resolveApiTarget(configured: string | undefined, isDev: boolean)
     return { base: "", host: url.host, error: "INSECURE" };
   }
 
-  return { base: value.replace(/\\/+$/, ""), host: url.host, error: null };
+  return { base: value.replace(/\/+$/, ""), host: url.host, error: null };
 }
