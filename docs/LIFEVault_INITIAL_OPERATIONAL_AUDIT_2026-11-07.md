@@ -256,3 +256,26 @@ This update supersedes earlier statements that the latest Android smoke run was 
 3. Physical Android UAT and iOS build/signing.
 4. Backup/restore drill and independent security acceptance.
 5. Restore central telemetry using its existing workflow after its 404/token access issue is resolved and authorized.
+
+
+## Final independent review — 2026-11-08
+
+### Repository/PR review
+- No open GitHub issues were returned for `ahmedfoucs-sketch/lifevault-mobile` at this check.
+- PR #8, #9 and #10 remain OPEN / DRAFT / unmerged. No review submissions or inline review threads were returned for PR #8 or PR #10.
+- PR #10 remains based on the PR #8 integration branch; its head is documentation-only after code-bearing API hardening commit `974b8a88754f4ce2a18655a09aa75954b148bfbc`.
+- Test source count was checked directly: 7 API-target tests + 6 crypto tests + 6 memory-engine tests = **19 test cases**.
+
+### CI trigger visibility
+- The hardening CI workflow has both a `pull_request` trigger targeting `main` and a `push` trigger for `hardening/*`. PR #10 targets the integration branch, not `main`, so the PR-triggered workflow lookup does not show its push-triggered run.
+- The GitHub connector's commit-run lookup explicitly returns PR-triggered runs only. Combined commit statuses for hardening code head `974b8a8` and current docs head `e638374` were empty. Therefore, the newer 19-test API hardening must remain **unverified by CI in this session**; do not infer success from prior 17-test runs.
+- Last fully verified code candidate remains `a4527e4098f0ae2816620b3bd3e18b8130ecb64`: CI #42455136589 SUCCESS and Android smoke #42455136623 SUCCESS. These do not cover the later two API policy tests.
+- PR #9 latest checkpoint head `8fc99726bb1fc41b95394c60d54b57e1b70b38f3` passed CI #42469069625.
+
+### Static review notes
+- Current API client keeps the prior session until a new login response has been validated and the new DEK successfully unwrapped; then it wipes the previous DEK and replaces the session.
+- Production API configuration fails closed and enforces HTTPS; development HTTP is limited to loopback, exact `/api/v1` path, and rejects URL credentials/query/fragment.
+- Backend-dependent guarantees (tenant isolation, session expiry/revocation, MFA enforcement, sync conflict semantics, server-side authorization, backup/restore) remain unverified until authoritative backend source and disposable endpoint are recovered.
+
+### Next concrete action
+- Once backend source is supplied, reconcile every route/field in `src/services/api-client.ts` against actual backend schemas before enabling integration tests. Keep all tests on disposable data.
