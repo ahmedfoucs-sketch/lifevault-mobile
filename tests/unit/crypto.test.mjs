@@ -17,8 +17,9 @@ test("AES-256 keys and wrapped DEKs must be exactly 32 bytes", async () => {
   await assert.rejects(() => seal(new Uint8Array(16), new Uint8Array([1]), "aad"), /32 bytes/);
   await assert.rejects(() => open(new Uint8Array(16), new Uint8Array(28), "aad"), /32 bytes/);
   await assert.rejects(() => wrapDek(new Uint8Array(16), generateDek()), /32 bytes/);
-  const malformedWrappedDek = await seal(generateDek(), new Uint8Array(16), "lifevault|dek|pw|v1");
-  await assert.rejects(() => unwrapDek(Buffer.from(malformedWrappedDek).toString("base64"), generateDek()), /32 bytes|decrypt/);
+  const kek = generateDek();
+  const malformedWrappedDek = await seal(kek, new Uint8Array(16), "lifevault|dek|pw|v1");
+  await assert.rejects(() => unwrapDek(Buffer.from(malformedWrappedDek).toString("base64"), kek), /32 bytes/);
 });
 
 test("AES-GCM rejects truncated ciphertext before decrypt", async () => {
