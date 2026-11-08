@@ -107,3 +107,35 @@ This checkpoint is based on the connected GitHub repository/API evidence and cur
 
 **Checkpoint branch:** `docs/lifevault-audit-checkpoint-2026-11-07`  
 **Proposed destination:** this document only; no merge is authorized.
+
+
+---
+
+## Addendum — 2026-11-08 hardening and historical backend evidence
+
+### Verified code and CI work
+- New draft PR #10: `hardening/crypto-memory-tests-2026-11-08`, based on PR #8 integration head. It adds KDF parameter validation for login and 2FA disable, derived-key cleanup, AES-GCM payload bounds, canonical recovery-key validation, a Second Brain tag parsing fix, and 11 automated unit tests.
+- CI run #42452263537 passed dependency audit, typecheck, 11/11 unit tests and Vite production build.
+- npm audit result on that run: **0 vulnerabilities** across critical/high/moderate/low.
+- Toolchain updated in the hardening branch to Capacitor 7.6.10, local-notifications 7.0.7, Vite 6.4.5, vue-tsc 3.3.14 and compatible plugin-vue. A generated package-lock artifact was uploaded; a branch-only workflow commit is configured to persist the generated lockfile.
+- Android build-smoke workflow uses a reserved non-routable `.invalid` API host. A successful APK build would prove native packaging only, not login, sync or backend availability. Latest run status must be checked before declaring it passed.
+
+### Historical backend source found outside GitHub
+- A personal Library export `Pasted text(3).txt`, last modified 2026-10-30, contains a legacy FastAPI backend snapshot with auth routes, a demo accounts server and encrypted sync routes.
+- This is historical evidence only. It is not verified as the current Windows backend or deployed service.
+- The snapshot has serious issues: a hardcoded master key in the older all-in-one server; wildcard CORS with credentials; plain SHA-256 password/auth-key hashing; a demo accounts server with in-memory demo users/tokens/vault values; an authentication failure path that returns an empty list; missing token-expiry enforcement in the shown demo route; and a client/server contract mismatch with the current PBKDF2 prelogin + wrapped-DEK client.
+- The historical sync route stores encrypted blobs and checks key_version/base_revision, but its required security/database modules and migrations are absent from the export; UUID identity expectations are not reconciled with the adjacent legacy demo account IDs.
+- A detailed review is recorded in `docs/HISTORICAL_BACKEND_SECURITY_REVIEW.md` on PR #10.
+- Do not connect the current client to the historical port-8001 service or use its demo account with real data. Recover the authoritative current backend source before attempting fixes. No live endpoint, secret, database or production service was accessed or changed.
+
+### Updated blockers
+1. Authoritative backend source and current deployment identity remain unavailable/unverified.
+2. Real HTTPS API endpoint and end-to-end contract are not verified.
+3. Backend authentication, password hashing, tenant isolation, MFA, session expiry/revocation, CORS, audit and recovery must be reviewed against current source.
+4. Backup/restore drill and real encrypted sync contract tests remain pending.
+5. Android build-smoke is not device acceptance; physical Android/iOS testing remains pending.
+6. Central telemetry snapshot remains stale until its existing workflow is refreshed; no duplicate integration was created.
+
+### Safety status
+- PR #10 remains draft and unmerged; PR #8 remains draft/unmerged.
+- No main merge, production deployment, real-data mutation, secret rotation, account permission change or central repository edit was performed.
