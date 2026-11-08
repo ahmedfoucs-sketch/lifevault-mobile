@@ -238,7 +238,7 @@ This update supersedes earlier statements that the latest Android smoke run was 
 ## Follow-up — API target hardening and current blockers, 2026-11-08 13:00 Asia/Riyadh
 
 - The latest audit/checkpoint commit on PR #9 is `bcb5265e0e32af2d94748f9e82e8e75e732163ca`; its CI run #42468748242 completed SUCCESS (dependency install, typecheck and production build).
-- PR #10's current branch head at this checkpoint is `2f4994b7e35b75630bc35476641de8406d7eb06d`. Its latest code-bearing head is `974b8a88754f4ce2a18655a09aa75954b148bfbc`; the later commits are documentation-only.
+- PR #10's latest code-bearing head is `974b8a88754f4ce2a18655a09aa75954b148bfbc`; later commits on that branch are documentation-only.
 - Additional API target controls were added on PR #10: HTTP in development is limited to loopback; configured base must be exactly `/api/v1`; URL credentials, query strings and fragments are rejected. Two additional unit tests were added, bringing the expected suite to 19 tests.
 - The prior verified code-bearing head `a4527e4098f0ae2816620b3bd3e18b8130ecb64` passed CI #42455136589 (17/17 tests) and Android smoke #42455136623. These runs do **not** validate the newer API-target code. Fresh CI and Android smoke for `974b8a8` have not yet been confirmed in this audit.
 - PR #8 remains OPEN/DRAFT/unmerged at `e9a0e166b3d9b2149a5bb36d7b3edf928fb58619`; CI #42367529223 SUCCESS.
