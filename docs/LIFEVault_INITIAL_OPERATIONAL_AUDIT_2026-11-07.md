@@ -206,3 +206,30 @@ Web CI and Android packaging are now green, but LifeVault is **not production-re
 1. Run the recovery checklist in `docs/BACKEND_RECOVERY_AND_OWNER_HANDOFF.md` from Claude Code on Windows; provide a sanitized report or private repository read access.
 2. Provide a physical Android device/tester for no-backend launch/UI smoke; defer login/sync until a secure disposable backend exists.
 3. Provide macOS/Xcode and signing authority only if iOS acceptance is required.
+
+
+## Follow-up verification — 2026-11-08 12:46 Asia/Riyadh
+
+This update supersedes earlier statements that the latest Android smoke run was still in progress.
+
+### Verified current PR and workflow state
+- PR #8: OPEN / DRAFT / unmerged; head `e9a0e166b3d9b2149a5bb36d7b3edf928fb58619`; CI run #42367529223 completed SUCCESS.
+- PR #9: OPEN / DRAFT / unmerged; head `e45c9cecc9562eb5bbe2a9e31ef093346dbac142`; checkpoint CI run #42455174740 completed SUCCESS.
+- PR #10: OPEN / DRAFT / unmerged; head `222153c894cb053b876d0d180fb39b7e0c6b09a9`; its latest commit is documentation-only. The latest verified code-bearing parent `a4527e4098f0ae2816620b3bd3e18b8130ecb64` passed CI run #42455136589 and Android smoke run #42455136623.
+- Android run #42455136623 was rechecked: job `android-build-smoke` completed SUCCESS, including Gradle `assembleDebug`, APK verification and artifact upload.
+- The CI run #42455136589 and PR #9 run #42455174740 were rechecked: both `validate` jobs completed SUCCESS.
+- PR #10's current documentation-only head has not been represented as a separately tested code change. The successful runs above validate the immediately preceding code-bearing candidate.
+- All three PRs remain draft and unmerged. PR #10 targets PR #8's integration branch; PR #8 and #9 target `main`.
+
+### What this proves — and does not prove
+- Dependency audit, typecheck, 17/17 unit tests and Vite production build passed on the verified hardening candidate.
+- Android debug packaging and artifact upload passed using the reserved non-routable `https://api.invalid.example/api/v1` host.
+- This is not proof of physical-device acceptance, real API connectivity, authentication, encrypted sync, notification delivery, iOS readiness or production security.
+- No production deployment, real personal-data mutation, secret/permission change, merge, or central AI COMMAND CENTER modification was performed.
+
+### Remaining owner/operator handoffs
+1. Recover the authoritative current backend source from the authorized Windows environment; Claude Code on Windows is required because this session cannot inspect that filesystem or its local services.
+2. Identify a real HTTPS test endpoint and provide a disposable backend/database for contract, auth, tenant-isolation, MFA/session, encrypted-sync and recovery tests.
+3. Install the smoke APK on a physical Android device for launch/RTL/navigation checks; defer login/sync until the disposable backend is ready.
+4. Arrange macOS/Xcode and signing access for iOS, plus an independent security review.
+5. Refresh and verify the existing AI COMMAND CENTER telemetry workflow separately; do not create a duplicate integration or change central settings without approval.
