@@ -62,3 +62,37 @@ Tracking PR: #8
 6. Perform physical-device end-to-end testing only after a secure disposable backend exists; iOS requires macOS/Xcode/signing access.
 7. Reconcile personal property receipts from actual attachment contents before recording payments or balances.
 8. Keep PR #8 and PR #10 draft/unmerged until release gates pass. No production deployment, real data mutation, secret change, permission change or auto-merge.
+
+
+## Verified execution update — 2026-11-08 (latest)
+
+### CI and Android
+- Latest hardening head: 0b46d51a16eeb039b1121c61648194b283c9f7a8.
+- LifeVault CI run 42454511670 completed SUCCESS. It verified a committed package-lock.json, `npm ci`, dependency audit enforcement at moderate severity, Vue/TypeScript typecheck, unit tests, production build, and lockfile artifact upload.
+- Android smoke run 42454511717 completed SUCCESS. All steps passed, including Gradle `assembleDebug`, APK existence verification, and upload.
+- Artifact: `lifevault-android-smoke-no-backend`, artifact ID 13607196295, SHA-256 `26c8b3a338cb321644b185c3644b4a2595f28e917b29dac2b3297322c04e3f99`, expires 2026-11-15 06:24:29 UTC. This is a debug smoke APK built without a real backend; it proves compilation/package generation only, not login, sync, push delivery, or release readiness.
+- The earlier checkpoint statements that package-lock.json was absent and Android smoke was pending are superseded by these verified results.
+
+### Pull requests
+- PR #8 remains OPEN / DRAFT / unmerged; it is the integration candidate.
+- PR #10 remains OPEN / DRAFT / unmerged; head 0b46d51a16eeb039b1121c61648194b283c9f7a8, base is the PR #8 integration branch. It is reported mergeable. Do not merge automatically.
+
+### Remaining external acceptance gates
+1. Authoritative backend source is still unavailable in connected GitHub repositories; historical local path D:\\LifeVault is unverified and must be re-supplied or exposed via an authorized private repository/workspace.
+2. No real public HTTPS API endpoint has been verified; do not configure placeholder URLs.
+3. Backend contract/security remains unverified: CORS allow-list, authentication, tenant isolation, server-side MFA, roles, session revocation, encrypted sync, audit logging, migrations, rate limiting, backup/restore and disaster recovery.
+4. Install the no-backend APK on a physical Android device for launch/navigation/UI smoke checks only. Do not attempt real login or sync. End-to-end acceptance needs a disposable secured backend and test account.
+5. iOS remains unbuilt; requires macOS/Xcode and Apple signing/provisioning assets.
+6. Notifications require device permission/channel and delivery tests; scheduled local notifications are not proof of remote push delivery.
+7. Independent cryptographic/security review remains recommended before storing real personal data. Unit tests and memory-buffer wiping are not a formal security audit.
+8. Personal apartment receipts/financial reconciliation remain outside the public repo and require reading actual receipt images; filenames are not proof of payment amounts.
+
+### Ownership / who can unblock
+- User / Windows workspace owner: provide the current authoritative backend source as a private repository, attach its source files to this workspace, or make the Windows project available through an approved transfer. No passwords/tokens in chat.
+- Backend engineer (or me once source is accessible): review and fix server auth, tenant isolation, MFA/session controls, sync contract, CORS, audit, migrations, backup/restore and recovery; deploy only to an explicitly authorized non-production environment first.
+- Infrastructure/domain owner: provision/identify a real HTTPS API host and TLS, then supply the public API base as a GitHub Actions repository Variable (not a secret if it is only the public URL). No infrastructure change is authorized by this checkpoint.
+- User with Android device: install the smoke APK and report launch/navigation results; later run dummy-account end-to-end tests after backend acceptance.
+- macOS/Xcode owner: provide an authorized Mac and Apple signing setup for iOS validation.
+- Product/security owner: approve any risk acceptance, production data handling, independent security review, and eventual PR merge/release.
+
+No merge, deployment, production config change, real-data mutation, secret change, permission change, or auto-merge was performed.
