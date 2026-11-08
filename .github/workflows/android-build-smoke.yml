@@ -26,9 +26,9 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Generate lockfile and install exact dependencies
+      - name: Verify committed lockfile and install exact dependencies
         run: |
-          npm install --package-lock-only --ignore-scripts
+          test -s package-lock.json
           npm ci
 
       - name: Build web assets with non-routable test API
