@@ -96,3 +96,26 @@ Tracking PR: #8
 - Product/security owner: approve any risk acceptance, production data handling, independent security review, and eventual PR merge/release.
 
 No merge, deployment, production config change, real-data mutation, secret change, permission change, or auto-merge was performed.
+
+
+## Follow-up verification — 2026-11-08 12:45 +03:00
+
+This addendum supersedes any earlier statement in this file that Android run #42455136623 was still in progress.
+
+### Latest workflow verification
+- PR #10 current head: `a4527e4098f0ae2816620b3bd3e18b8130ecb64`.
+- CI run #42455136589: COMPLETED / SUCCESS. Verified clean lockfile install, dependency audit enforcement, Vue/TypeScript typecheck, unit tests, and production build.
+- Android smoke run #42455136623: COMPLETED / SUCCESS. Verified Java 21 setup, exact dependency install, Vite build with reserved non-routable test API, Capacitor platform generation/sync, Gradle debug APK assembly, APK existence, and artifact upload.
+- The Android run is a packaging smoke test only. It does not validate backend login, sync, real user data, notifications, or production readiness.
+- PR #9 checkpoint CI run #42455174740: COMPLETED / SUCCESS.
+- PR #8 current head remains `e9a0e166b3d9b2149a5bb36d7b3edf928fb58619`; CI run #42367529223: COMPLETED / SUCCESS.
+- PR #8, PR #9, and PR #10 are all OPEN, DRAFT, and unmerged. PR #8 targets `main`; PR #10 targets the PR #8 integration branch; PR #9 is documentation-only against `main`.
+- No merge, deployment, production configuration change, secret/permission change, or personal-data mutation was performed.
+
+### Immediate remaining work
+1. Obtain and inspect the authoritative current backend source in an authorized private repository or supplied archive. Do not use the historical unsafe export.
+2. Verify a real HTTPS API host and contract, then test CORS/authentication/tenant isolation/MFA/session revocation/encrypted sync/recovery/audit/migrations with disposable data.
+3. Install the no-backend APK on a physical Android device for launch/navigation smoke only; use a secured disposable backend for end-to-end tests.
+4. Complete backup/restore and independent security review; validate notification delivery and iOS separately.
+5. Keep all PRs draft/unmerged until acceptance gates pass; no auto-merge.
+
