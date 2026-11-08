@@ -156,17 +156,26 @@ export async function encryptItem(
   id: string,
   payload: unknown
 ): Promise<string> {
-  return toB64(await seal(dek, enc.encode(JSON.stringify(payload)), AAD_ITEM(type, id)));
+  const plain = enc.encode(JSON.stringify(payload));
+  try {
+    return toB64(await seal(dek, plain, AAD_ITEM(type, id)));
+  } finally {
+    wipe(plain);
+  }
 }
 
 export async function decryptItem<T = unknown>(
   dek: Uint8Array,
-  type: ItemType,
+  type: string,
   id: string,
   ciphertextB64: string
 ): Promise<T> {
   const plain = await open(dek, fromB64(ciphertextB64), AAD_ITEM(type, id));
-  return JSON.parse(dec.decode(plain)) as T;
+  try {
+    return JSON.parse(dec.decode(plain)) as T;
+  } finally {
+    wipe(plain);
+  }
 }
 
 /* ---------- Recovery key ---------- */
