@@ -16,14 +16,29 @@ test("HTTPS API base is accepted in development and production", () => {
   assert.deepEqual(resolveApiTarget("https://api.example.com/api/v1/", false), expected);
 });
 
-test("plain HTTP is accepted only in development", () => {
+test("plain HTTP is accepted only for loopback in development", () => {
   assert.equal(resolveApiTarget("http://127.0.0.1:8001/api/v1", true).error, null);
+  assert.equal(resolveApiTarget("http://localhost:8001/api/v1", true).error, null);
+  assert.equal(resolveApiTarget("http://api.example.com/api/v1", true).error, "INSECURE");
+  assert.equal(resolveApiTarget("http://192.168.1.10:8001/api/v1", true).error, "INSECURE");
   assert.equal(resolveApiTarget("http://api.example.com/api/v1", false).error, "INSECURE");
+});
+
+test("API base must target the exact versioned API path", () => {
+  assert.equal(resolveApiTarget("https://api.example.com", false).error, "INVALID_URL");
+  assert.equal(resolveApiTarget("https://api.example.com/api", false).error, "INVALID_URL");
+  assert.equal(resolveApiTarget("https://api.example.com/v2/api/v1", false).error, "INVALID_URL");
+});
+
+test("credentials, query strings and fragments are rejected", () => {
+  assert.equal(resolveApiTarget("https://user:pass@api.example.com/api/v1", false).error, "INVALID_URL");
+  assert.equal(resolveApiTarget("https://api.example.com/api/v1?debug=true", false).error, "INVALID_URL");
+  assert.equal(resolveApiTarget("https://api.example.com/api/v1#fragment", false).error, "INVALID_URL");
 });
 
 test("invalid URLs and non-web protocols are rejected", () => {
   assert.equal(resolveApiTarget("not a url", false).error, "INVALID_URL");
-  assert.equal(resolveApiTarget("ftp://api.example.com/path", false).error, "INVALID_URL");
+  assert.equal(resolveApiTarget("ftp://api.example.com/api/v1", false).error, "INVALID_URL");
 });
 
 test("production cannot opt into insecure HTTP", async () => {
