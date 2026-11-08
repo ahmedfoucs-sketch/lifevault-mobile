@@ -178,3 +178,13 @@ Web CI and Android packaging are now green, but LifeVault is **not production-re
 - Latest CI run #42452705103 on PR #10 head `11eaaf2ddc8484fd5a14bcd23354f44336bd1881`: SUCCESS — 0 npm audit vulnerabilities, typecheck passed, 17/17 unit tests passed, Vite production build passed.
 - Android smoke for the immediately preceding hardening head passed; the new run for this API-policy change is still in progress. The previous smoke artifact remains test-only and uses a non-routable API host.
 - No production API base, credentials or real service was configured.
+
+
+## Addendum — latest Android packaging verification, 2026-11-08
+
+- Android build-smoke run #42452705050 completed **SUCCESS** on the current PR #10 head `11eaaf2ddc8484fd5a14bcd23354f44336bd1881`.
+- All workflow stages passed: Node/Java 21 setup, clean `npm ci`, Vite web build with a reserved non-routable API host, Capacitor Android platform generation, plugin/assets sync, Gradle `assembleDebug`, APK existence verification and artifact upload.
+- Artifact: `lifevault-android-smoke-no-backend`, artifact ID `13606356137`, SHA-256 `056c9958ea7199581b69cbb2a1a15831574adbea3964779f26553e9da138b551` (ZIP digest from GitHub). APK is for launch/UI/package checks only; its `.invalid` API host cannot authenticate or sync.
+- Run: https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42452705050.
+- This confirms Android debug packaging on the latest hardening head, not physical-device acceptance, real backend connectivity, iOS readiness or production security.
+- PR #8, PR #9 and PR #10 remain open draft/unmerged. No merge, production deployment, real-data change, secret/permission change or central repository modification was performed.
