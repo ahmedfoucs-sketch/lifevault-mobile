@@ -22,7 +22,8 @@ export function resolveApiTarget(configured: string | undefined, isDev: boolean)
     return { base: "", host: url.host, error: "INVALID_URL" };
   }
 
-  const path = url.pathname.replace(/\\/+$/, "");
+  let path = url.pathname;
+  while (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
   if (
     url.username ||
     url.password ||
