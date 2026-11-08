@@ -233,3 +233,26 @@ This update supersedes earlier statements that the latest Android smoke run was 
 3. Install the smoke APK on a physical Android device for launch/RTL/navigation checks; defer login/sync until the disposable backend is ready.
 4. Arrange macOS/Xcode and signing access for iOS, plus an independent security review.
 5. Refresh and verify the existing AI COMMAND CENTER telemetry workflow separately; do not create a duplicate integration or change central settings without approval.
+
+
+## Follow-up — API target hardening and current blockers, 2026-11-08 13:00 Asia/Riyadh
+
+- The latest audit/checkpoint commit on PR #9 is `bcb5265e0e32af2d94748f9e82e8e75e732163ca`; its CI run #42468748242 completed SUCCESS (dependency install, typecheck and production build).
+- PR #10's current branch head is `8d69a97d6a01715fe5cb5ed56a5ff5ca28c2bc26`. Its latest code-bearing head is `974b8a88754f4ce2a18655a09aa75954b148bfbc`; the later commits are documentation-only.
+- Additional API target controls were added on PR #10: HTTP in development is limited to loopback; configured base must be exactly `/api/v1`; URL credentials, query strings and fragments are rejected. Two additional unit tests were added, bringing the expected suite to 19 tests.
+- The prior verified code-bearing head `a4527e4098f0ae2816620b3bd3e18b8130ecb64` passed CI #42455136589 (17/17 tests) and Android smoke #42455136623. These runs do **not** validate the newer API-target code. Fresh CI and Android smoke for `974b8a8` have not yet been confirmed in this audit.
+- PR #8 remains OPEN/DRAFT/unmerged at `e9a0e166b3d9b2149a5bb36d7b3edf928fb58619`; CI #42367529223 SUCCESS.
+- PR #9 remains OPEN/DRAFT/unmerged at `bcb5265e0e32af2d94748f9e82e8e75e732163ca`; CI #42468748242 SUCCESS.
+- PR #10 remains OPEN/DRAFT/unmerged and targets PR #8's integration branch. No merge or production deployment was performed.
+
+### Central telemetry recheck
+- The central `data/command-center.json` snapshot still records its last successful LifeVault collection at 2026-11-07 02:24 UTC; RAM RCM and SAHM entries still show HTTP 404.
+- Existing central telemetry run #42439786435 has a failed `sync` job. The central scheduled workflow exists, but no successful fresh LifeVault snapshot was verified.
+- I did not dispatch or edit the central workflow because it writes the central telemetry snapshot and the existing operating boundary forbids central project-data/settings changes without separate approval.
+
+### Work that remains outside this session's access
+1. Recover authoritative backend source from the Windows workspace and verify its runtime/deployment identity.
+2. Provide a verified HTTPS test endpoint and disposable database for server/client contract, auth, tenant isolation, MFA/session, encrypted sync and recovery tests.
+3. Physical Android UAT and iOS build/signing.
+4. Backup/restore drill and independent security acceptance.
+5. Restore central telemetry using its existing workflow after its 404/token access issue is resolved and authorized.
