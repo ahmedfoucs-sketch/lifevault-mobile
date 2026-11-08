@@ -139,3 +139,32 @@ This checkpoint is based on the connected GitHub repository/API evidence and cur
 ### Safety status
 - PR #10 remains draft and unmerged; PR #8 remains draft/unmerged.
 - No main merge, production deployment, real-data mutation, secret rotation, account permission change or central repository edit was performed.
+
+
+## Addendum — final verification results, 2026-11-08
+
+### Current hardening candidate
+- PR #10 head: `6b1786b6062ad084fc39393d11ee415abdb85538`; draft and unmerged, based on PR #8 integration branch.
+- `package-lock.json` is committed to the hardening branch. CI now installs with `npm ci` and uses read-only repository permissions.
+- Dependency versions on the candidate: Capacitor 7.6.10, local notifications 7.0.7, Vite 6.4.5, vue-tsc 3.3.14 and plugin-vue 5.2.4.
+- Latest CI run #42452500725: SUCCESS. npm audit reports 0 vulnerabilities; Vue/TypeScript typecheck passes; 12/12 crypto and Second Brain unit tests pass; Vite production build passes.
+- Latest Android build-smoke run #42452500739: SUCCESS on the same source SHA. Capacitor Android generation, plugin sync, Gradle debug APK assembly, APK verification and artifact upload all passed.
+- Artifact name: `lifevault-android-smoke-no-backend`; run URL: https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42452500739.
+- The smoke APK is built with a reserved `.invalid` API base. It is suitable only for launch/UI/package checks and cannot log in, sync or access a real backend. No physical-device test has been performed.
+
+### Central telemetry — updated observation
+- The last successful LifeVault telemetry snapshot still recorded in `AI_COMMAND_CENTER/data/command-center.json` is 2026-11-07 02:24 UTC.
+- Existing central workflow run #23 (ID `42439786435`) was scheduled on 2026-11-08 02:44 UTC and failed. Later runs observed at 05:49 UTC were for other central workflows; no successful telemetry refresh was verified.
+- Central telemetry remains stale. No central repository file, workflow, token, secret or permission was changed. Do not create a second telemetry integration.
+
+### Remaining release blockers
+1. Recover the authoritative current backend source; the 2026-10-30 Library export is historical and contains serious security/client-contract defects.
+2. Verify the real HTTPS API and current server/client contract.
+3. Test authentication, session revocation/expiry, tenant isolation, CORS, recovery, MFA, encrypted sync and conflict handling against an isolated test database.
+4. Verify backup and restore with disposable data.
+5. Perform physical Android UAT and iOS simulator/device build/signing.
+6. Reconcile the existing central telemetry workflow failure and confirm a fresh LifeVault snapshot.
+7. Independent security review and explicit production acceptance.
+
+### Release decision
+Web CI and Android packaging are now green, but LifeVault is **not production-ready**. Keep PR #8 and PR #10 unmerged until backend, real API, restore and device acceptance gates pass.
