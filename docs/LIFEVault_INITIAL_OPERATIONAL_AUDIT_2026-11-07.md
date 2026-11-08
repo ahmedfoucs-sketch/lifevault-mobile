@@ -168,3 +168,13 @@ This checkpoint is based on the connected GitHub repository/API evidence and cur
 
 ### Release decision
 Web CI and Android packaging are now green, but LifeVault is **not production-ready**. Keep PR #8 and PR #10 unmerged until backend, real API, restore and device acceptance gates pass.
+
+
+## Addendum — API transport policy hardening, 2026-11-08
+
+- Further inspection of the PR #8 API configuration found that `VITE_ALLOW_INSECURE=true` could bypass the HTTPS-only rule in a production build.
+- PR #10 now extracts a pure API target resolver and removes that override. HTTP is permitted only in local development; production HTTP returns `INSECURE`; missing production API configuration returns `NOT_CONFIGURED`.
+- Added five API policy tests covering missing config, HTTPS, local-only HTTP, malformed URLs and rejection of production insecure overrides.
+- Latest CI run #42452705103 on PR #10 head `11eaaf2ddc8484fd5a14bcd23354f44336bd1881`: SUCCESS — 0 npm audit vulnerabilities, typecheck passed, 17/17 unit tests passed, Vite production build passed.
+- Android smoke for the immediately preceding hardening head passed; the new run for this API-policy change is still in progress. The previous smoke artifact remains test-only and uses a non-routable API host.
+- No production API base, credentials or real service was configured.
