@@ -9,6 +9,7 @@ execFileSync("npx", [
   "tsc",
   "src/crypto/lv-crypto.ts",
   "src/services/memory-engine.ts",
+  "src/services/api-config-core.ts",
   "--target", "ES2022",
   "--module", "ES2022",
   "--lib", "ES2022,DOM",
