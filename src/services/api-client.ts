@@ -10,7 +10,6 @@ import {
 import { API_BASE, API_TARGET, apiConfigMessage } from "./api-config";
 export { API_BASE, API_TARGET };
 
-/* ---------- Endpoint paths (relative to API_BASE) ---------- */
 export const PATH = {
   prelogin: "/auth/prelogin", login: "/auth/login",
   twoFaSetup: "/auth/2fa/setup", twoFaEnable: "/auth/2fa/enable", twoFaDisable: "/auth/2fa/disable",
@@ -72,33 +71,72 @@ export async function request<T>(path: string, init: RequestInit & { auth?: bool
   return body as T;
 }
 
+function validateKdfParameters(pre: PreloginResponse): { salt: Uint8Array; iterations: number } {
+  if (pre?.kdf_algo !== "pbkdf2-sha256") {
+    throw new ApiError(502, { code: "UNSUPPORTED_KDF" }, "إعداد خوارزمية اشتقاق المفتاح غير مدعوم.");
+  }
+  let salt: Uint8Array;
+  try {
+    salt = fromB64(pre.kdf_salt);
+  } catch {
+    throw new ApiError(502, { code: "INVALID_KDF_SALT" }, "استجابة الخادم تحتوي على Salt غير صالح.");
+  }
+  if (salt.length < 16 || salt.length > 64) {
+    wipe(salt);
+    throw new ApiError(502, { code: "INVALID_KDF_SALT_LENGTH" }, "طول Salt المرسل من الخادم غير آمن أو غير صالح.");
+  }
+  if (!Number.isInteger(pre.kdf_iterations) || pre.kdf_iterations < 100_000 || pre.kdf_iterations > 2_000_000) {
+    wipe(salt);
+    throw new ApiError(502, { code: "INVALID_KDF_ITERATIONS" }, "عدد دورات اشتقاق المفتاح خارج الحدود المقبولة.");
+  }
+  return { salt, iterations: pre.kdf_iterations };
+}
+
 /* ---------- Auth ---------- */
 export const prelogin = (email: string) =>
   request<PreloginResponse>(PATH.prelogin, { method: "POST", body: JSON.stringify({ email }) });
 
 export interface DeviceInfo { name: string; platform: string; }
 
-/** prelogin -> derive keys locally -> login -> unwrap DEK. Server only sees auth_key. */
+/**
+ * prelogin -> validate KDF parameters -> derive keys locally -> login -> unwrap DEK.
+ * All derived key material is wiped on every exit path. Existing sessions are only
+ * replaced after a new session has been fully established.
+ */
 export async function login(email: string, password: string, device: DeviceInfo, totpCode?: string): Promise<LoginResponse> {
   const pre = await prelogin(email);
-  const master = await deriveMasterKey(password, fromB64(pre.kdf_salt), pre.kdf_iterations);
-  const authKey = await deriveAuthKey(master);
-  const kek = await deriveKekPw(master);
-  const body: Record<string, unknown> = { email, auth_key: toB64(authKey), device };
-  if (totpCode) body.totp_code = totpCode;
-  let resp: LoginResponse;
+  const { salt, iterations } = validateKdfParameters(pre);
+
+  let master: Uint8Array | undefined;
+  let authKey: Uint8Array | undefined;
+  let kek: Uint8Array | undefined;
   try {
-    resp = await request<LoginResponse>(PATH.login, { method: "POST", body: JSON.stringify(body) });
-  } catch (e) {
-    wipe(master, kek);
-    throw e;
+    master = await deriveMasterKey(password, salt, iterations);
+    authKey = await deriveAuthKey(master);
+    kek = await deriveKekPw(master);
+    const body: Record<string, unknown> = { email, auth_key: toB64(authKey), device };
+    if (totpCode) body.totp_code = totpCode;
+    const resp = await request<LoginResponse>(PATH.login, { method: "POST", body: JSON.stringify(body) });
+    if (
+      !resp ||
+      typeof resp.user_id !== "string" || !resp.user_id ||
+      typeof resp.access_token !== "string" || !resp.access_token ||
+      typeof resp.wrapped_dek_pw !== "string" || !resp.wrapped_dek_pw ||
+      !Number.isInteger(resp.key_version) || resp.key_version < 0 ||
+      !Number.isInteger(resp.sync_rev) || resp.sync_rev < 0
+    ) {
+      throw new ApiError(502, { code: "INVALID_LOGIN_RESPONSE" }, "استجابة تسجيل الدخول غير مكتملة.");
+    }
+    const dek = await unwrapDek(resp.wrapped_dek_pw, kek, "pw");
+    logout();
+    session = { accessToken: resp.access_token, userId: resp.user_id, keyVersion: resp.key_version, syncRev: resp.sync_rev, dek };
+    return resp;
   } finally {
-    wipe(authKey);
+    wipe(salt);
+    if (master) wipe(master);
+    if (authKey) wipe(authKey);
+    if (kek) wipe(kek);
   }
-  const dek = await unwrapDek(resp.wrapped_dek_pw, kek, "pw");
-  wipe(master, kek);
-  session = { accessToken: resp.access_token, userId: resp.user_id, keyVersion: resp.key_version, syncRev: resp.sync_rev, dek };
-  return resp;
 }
 
 /* ---------- 2FA ---------- */
@@ -112,13 +150,20 @@ export async function enable2FA(code: string): Promise<{ backupCodes: string[] }
 }
 export async function disable2FA(email: string, password: string, code: string) {
   const pre = await prelogin(email);
-  const master = await deriveMasterKey(password, fromB64(pre.kdf_salt), pre.kdf_iterations);
-  const authKey = await deriveAuthKey(master);
+  const { salt, iterations } = validateKdfParameters(pre);
+  let master: Uint8Array | undefined;
+  let authKey: Uint8Array | undefined;
   try {
+    master = await deriveMasterKey(password, salt, iterations);
+    authKey = await deriveAuthKey(master);
     return await request<unknown>(PATH.twoFaDisable, {
       method: "POST", auth: true, body: JSON.stringify({ auth_key: toB64(authKey), code }),
     });
-  } finally { wipe(master, authKey); }
+  } finally {
+    wipe(salt);
+    if (master) wipe(master);
+    if (authKey) wipe(authKey);
+  }
 }
 
 /* ---------- Sync ---------- */

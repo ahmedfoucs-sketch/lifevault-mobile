@@ -9,3 +9,4 @@ android/app/build/
 android/.gradle/
 ios/App/Pods/
 .DS_Store
+.test-dist/
