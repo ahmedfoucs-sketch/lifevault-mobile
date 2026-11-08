@@ -1,6 +1,6 @@
 # LifeVault AI — Engineering Context (canonical handover)
 
-Updated: 2026-11-08 09:30 Asia/Riyadh
+Updated: 2026-11-08 12:55 Asia/Riyadh
 Repository: `ahmedfoucs-sketch/lifevault-mobile`
 Default branch: `main`
 Integration candidate: PR #8 — `integration/lifevault-commander-second-brain-2026-11-07`
@@ -17,10 +17,10 @@ Checkpoint: PR #9 — `docs/lifevault-audit-checkpoint-2026-11-07`
 ## Verified engineering state — 2026-11-08
 - Stack: Vue 3, TypeScript, Vite, Pinia and Capacitor 7.
 - PR #8 is OPEN, DRAFT and unmerged. It integrates the Commander modules and Second Brain on top of the existing app.
-- PR #10 is OPEN, DRAFT and unmerged, based on PR #8. Latest verified head: `0b46d51a16eeb039b1121c61648194b283c9f7a8`.
-- PR #10 includes KDF parameter validation, key cleanup, AES-256 key/payload validation, recovery-key validation, production HTTPS-only API target policy, Second Brain tag parsing fix, committed lockfile, dependency updates, and 17 unit tests.
-- Latest CI run #42454511670 on the current head passed: clean `npm ci`, dependency audit enforcement, Vue/TypeScript typecheck, unit tests and Vite production build.
-- Latest Android smoke run #42454511717 on the same head passed: Capacitor Android generation, plugin/assets sync, Gradle debug APK assembly, APK verification and artifact upload. It uses `https://api.invalid.example/api/v1`; it cannot log in or sync.
+- PR #10 is OPEN, DRAFT and unmerged, based on PR #8. Latest branch head after API target hardening: `974b8a88754f4ce2a18655a09aa75954b148bfbc`.
+- PR #10 includes KDF parameter validation, key cleanup, AES-256 key/payload validation, recovery-key validation, production HTTPS-only API target policy (loopback-only HTTP in dev, exact `/api/v1` path, no URL credentials/query/fragment), Second Brain tag parsing fix, committed lockfile, dependency updates, and 19 unit tests (new API-policy tests awaiting CI on latest code head).
+- Previously verified CI run #42455136589 passed on code-bearing head `a4527e4098f0ae2816620b3bd3e18b8130ecb64`: clean `npm ci`, dependency audit enforcement, Vue/TypeScript typecheck, 17/17 unit tests and Vite production build. The latest API-target tightening commits are awaiting fresh CI confirmation.
+- Android smoke run #42455136623 passed on the immediately preceding code-bearing head `a4527e4098f0ae2816620b3bd3e18b8130ecb64`. The latest API-target tightening requires a fresh packaging run before claiming the current head is green. It uses `https://api.invalid.example/api/v1`; it cannot log in or sync.
 - Latest Android artifact ID: `13607196295`, expires 2026-11-15.
 - PR #9 is OPEN, DRAFT and unmerged. Its checkpoint branch has been updated separately.
 - Latest verified CI reports zero npm audit vulnerabilities and 17/17 unit tests passed on the API-transport hardening head; confirm latest run logs before changing this count.
