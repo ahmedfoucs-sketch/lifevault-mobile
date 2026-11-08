@@ -1,80 +1,81 @@
 # LifeVault AI — Device Test & Release Readiness
 
-Current candidate: `lifevault-premium-ui`
-Build commit: `b829f327db498b4a5e27da647636de09c5a51ecb`
-Android workflow run: [41358471939](https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/41358471939)
-CI workflow run: [41358471946](https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/41358471946)
+## Current CI candidate
 
-## Verified before device testing
-- [x] Web production build completed in GitHub Actions.
-- [x] Capacitor Android project generated in CI.
-- [x] Capacitor plugins/assets synced in CI.
-- [x] Android debug APK assembled successfully.
-- [x] APK artifact uploaded as `lifevault-android-debug`.
-- [x] General CI workflow completed successfully.
-- [ ] APK installed and launched on a physical Android device.
-- [ ] Login, encrypted vault read/write, and logout verified on device.
-- [ ] Reminder scheduling and notification delivery verified on device.
-- [ ] iOS build/device validation completed (separate macOS/Xcode workflow required).
+- Repository: `ahmedfoucs-sketch/lifevault-mobile`
+- Hardening branch: `hardening/crypto-memory-tests-2026-11-08`
+- Latest verified hardening head: `0b46d51a16eeb039b1121c61648194b283c9f7a8`
+- Hardening PR: [#10](https://github.com/ahmedfoucs-sketch/lifevault-mobile/pull/10) (draft, open, unmerged)
+- CI run: [42454511670](https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42454511670) — success
+- Android build-smoke run: [42454511717](https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42454511717) — success
+- Android artifact: `lifevault-android-smoke-no-backend`, ID `13607196295`, expires 2026-11-15.
+- Artifact SHA-256 (GitHub ZIP digest): `26c8b3a338cb321644b185c3644b4a2595f28e917b29dac2b3297322c04e3f99`.
 
-## APK retrieval
-1. Open the Android workflow run linked above.
-2. In Artifacts, download `lifevault-android-debug`.
-3. Extract the ZIP and install `app-debug.apk` on the Android test phone.
-4. If Android blocks installation, allow installation from the browser/files app used to open the APK, then retry.
+## What CI has proven
 
-The artifact expires on 2026-11-15. Re-run the Android workflow if it has expired.
+- [x] Clean dependency install from committed `package-lock.json`.
+- [x] Dependency audit enforcement.
+- [x] Vue/TypeScript typecheck.
+- [x] 17/17 unit tests on the previously verified hardening run.
+- [x] Vite production build.
+- [x] Capacitor Android platform generation and plugin/assets sync.
+- [x] Gradle debug APK assembly, APK existence verification and artifact upload on latest head.
 
-## Physical-device test sequence
+The Android smoke workflow deliberately builds with `https://api.invalid.example/api/v1`. This reserved non-routable host proves packaging only. It cannot authenticate, sync or reach user data. Do not configure this value as a runtime API.
 
-### A. Installation and launch
-- [ ] Install APK without installation errors.
-- [ ] Launch app; confirm no blank screen or immediate crash.
-- [ ] Confirm Arabic text, layout, and navigation render correctly.
-- [ ] Background and reopen the app; confirm it remains stable.
+## Still requiring a person/device
 
-### B. Authentication and encrypted vault
-- [ ] Sign in with a test account.
-- [ ] Create a disposable test vault entry using non-sensitive test data.
-- [ ] Confirm entry appears after refresh/reopen.
-- [ ] Edit entry and verify updated values persist.
-- [ ] Delete disposable entry and verify it disappears.
-- [ ] Sign out; confirm vault state is cleared from the UI.
-- [ ] Sign in again and confirm expected server-synced encrypted data is available.
+- [ ] Install and launch the no-backend APK on a physical Android phone for UI/package smoke only.
+- [ ] Verify Arabic RTL, navigation, background/resume, and crash-free launch.
+- [ ] Do not attempt login, sync or enter real personal data in this no-backend build.
+- [ ] After a secure disposable backend is available, build a separate APK with its verified HTTPS test endpoint and perform full auth/vault/Commander/Second Brain tests using dummy data.
+- [ ] Verify reminder scheduling, notification permission handling, privacy-safe lock-screen content, notification tap routing, and rescheduling on physical hardware.
+- [ ] Complete iOS simulator/device build and signing on macOS/Xcode with authorized Apple signing assets.
 
-### C. Personal memory
-- [ ] Save a disposable note.
-- [ ] Search for the note and open it.
-- [ ] Confirm category and timestamp display.
-- [ ] Reopen app and confirm note persists.
+## Physical Android test sequence
+
+### A. Install and launch
+- [ ] Install without package/signature errors.
+- [ ] Launch; confirm no blank screen or immediate crash.
+- [ ] Confirm Arabic RTL, layout and navigation render correctly.
+- [ ] Background and reopen the app; confirm stability.
+
+### B. Auth and encrypted storage — only with a secure disposable backend
+- [ ] Sign in using a dedicated disposable test account.
+- [ ] Create, read, update and delete a dummy vault entry.
+- [ ] Confirm persistence after refresh/reopen and expected server sync.
+- [ ] Sign out; confirm session and in-memory DEK are cleared.
+- [ ] Sign in again and verify only the test account's data is returned.
+- [ ] Repeat with a second test account and verify cross-user isolation.
+
+### C. Commander and Second Brain
+- [ ] Create/search/update/delete disposable structured records.
+- [ ] Test Arabic and English tags and links.
+- [ ] Verify logout clears in-memory memory state.
+- [ ] Verify no duplicate or parallel personal-record store is created.
 
 ### D. Reminders and notifications
-- [ ] Create a reminder for 2–3 minutes in the future.
-- [ ] Confirm the reminder review card shows the correct title/date.
-- [ ] Confirm reminder is saved only after tapping confirm.
-- [ ] Grant notification permission when prompted.
-- [ ] Put app in background and wait for the scheduled time.
-- [ ] Confirm a generic privacy-safe notification appears.
-- [ ] Tap notification and confirm app opens.
-- [ ] Repeat with notification permission denied; confirm reminder still saves and app reports notification limitation clearly.
-- [ ] Repeat with app force-stopped only as a separate diagnostic; behavior may vary by Android vendor/OS.
+- [ ] Create a reminder 2–3 minutes in the future and confirm it.
+- [ ] Grant notification permission and verify a generic notification appears in background.
+- [ ] Confirm notification text does not disclose title or personal details.
+- [ ] Tap notification and confirm correct app routing.
+- [ ] Repeat with notification permission denied.
+- [ ] Test edit/delete/reschedule behavior; recurrence and advanced natural-language parsing remain unverified.
 
-### E. Security and privacy checks
-- [ ] Use dummy data only; do not enter real passwords or sensitive personal information during initial testing.
-- [ ] Confirm lock-screen notification does not reveal reminder title/details.
-- [ ] Confirm no plaintext personal content is exposed in notification text.
-- [ ] Do not capture or share screenshots containing credentials or private records.
+### E. Security and privacy
+- [ ] Use dummy data only.
+- [ ] Confirm no plaintext record content or credentials appear in logs or notifications.
+- [ ] Do not capture/share screenshots containing credentials or private records.
+- [ ] Test logout, session expiry/revocation and cross-account isolation against the disposable backend.
 
-## Known limitations to verify / track
-- Reminder parsing is basic: numeric dates, “tomorrow”, and “after N days”; arbitrary natural-language dates/times are not supported.
-- Reminder recurrence, advance alerts, and edit/delete notification rescheduling are not implemented.
-- Notification delivery has not yet been proven on physical hardware.
-- This APK is Android-only. iPhone requires a separate iOS build and signing process on macOS/Xcode.
-- The assistant currently provides encrypted note capture and keyword categorization, not an LLM-powered conversational assistant.
+## Release gates
 
-## Release gate
-Do not merge the draft PR or call this production-ready until:
-1. Physical-device smoke tests pass.
-2. Reminder notification delivery is demonstrated.
-3. Any blocking defects are fixed and CI/APK workflows pass again.
-4. The owner explicitly approves merging.
+Do not merge PR #8 or PR #10 and do not call LifeVault production-ready until:
+1. Authoritative backend source and deployment identity are established.
+2. Real HTTPS API and client/server contract pass tests.
+3. Authentication, authorization, MFA, session, tenancy and recovery checks pass.
+4. Encrypted sync and conflict tests pass against disposable data.
+5. Backup and restore drill passes.
+6. Physical Android and iOS acceptance gates are completed.
+7. Independent security review is complete.
+8. The owner explicitly approves release/merge.
