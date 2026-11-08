@@ -5,7 +5,7 @@ globalThis.crypto ??= webcrypto;
 
 import {
   deriveMasterKey, encryptItem, decryptItem, generateRecoveryKey, parseRecoveryKey,
-  open, seal, wrapDek, unwrapDek, generateDek, verifyCompatibility
+  open, seal, toB64, wrapDek, unwrapDek, generateDek, verifyCompatibility
 } from "../../.test-dist/crypto/lv-crypto.js";
 
 test("crypto compatibility self-test passes all internal checks", async () => {
@@ -19,7 +19,7 @@ test("AES-256 keys and wrapped DEKs must be exactly 32 bytes", async () => {
   await assert.rejects(() => wrapDek(new Uint8Array(16), generateDek()), /32 bytes/);
   const kek = generateDek();
   const malformedWrappedDek = await seal(kek, new Uint8Array(16), "lifevault|dek|pw|v1");
-  await assert.rejects(() => unwrapDek(Buffer.from(malformedWrappedDek).toString("base64"), kek), /32 bytes/);
+  await assert.rejects(() => unwrapDek(toB64(malformedWrappedDek), kek), /32 bytes/);
 });
 
 test("AES-GCM rejects truncated ciphertext before decrypt", async () => {
