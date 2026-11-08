@@ -89,3 +89,8 @@ Do not merge PR #8 or PR #10 and do not call LifeVault production-ready until:
 - Android smoke run [42455136623](https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42455136623): **SUCCESS**; Java 21 setup, exact dependency install, Vite build with reserved non-routable API, Capacitor generation/sync, Gradle `assembleDebug`, APK verification and artifact upload.
 - Both runs were rechecked through GitHub job results on 2026-11-08. The latest documentation-only commit itself has not been separately rerun; no source-code changes are included in it.
 - This does not replace physical Android UAT or validate login/sync. The APK uses `https://api.invalid.example/api/v1` and cannot reach a backend.
+
+
+## Final review note — 2026-11-08
+
+The current hardening CI workflow runs on push to `hardening/*`; PR-triggered runs are restricted to PRs targeting `main`. Since PR #10 targets the PR #8 integration branch, its push-triggered workflow is not exposed by the connector's PR-only commit-run lookup. The latest code-bearing API policy commit `974b8a88754f4ce2a18655a09aa75954b148bfbc` therefore remains **CI-unverified in this session**. Source-level test count is 19 (7 API config + 6 crypto + 6 memory engine). The previously verified 17-test code candidate and Android smoke passed, but do not cover the two additional API-policy cases.
