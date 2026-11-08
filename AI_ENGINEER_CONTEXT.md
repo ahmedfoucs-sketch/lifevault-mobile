@@ -17,7 +17,7 @@ Checkpoint: PR #9 — `docs/lifevault-audit-checkpoint-2026-11-07`
 ## Verified engineering state — 2026-11-08
 - Stack: Vue 3, TypeScript, Vite, Pinia and Capacitor 7.
 - PR #8 is OPEN, DRAFT and unmerged. It integrates the Commander modules and Second Brain on top of the existing app.
-- PR #10 is OPEN, DRAFT and unmerged, based on PR #8. Current PR #10 branch head: `8d69a97d6a01715fe5cb5ed56a5ff5ca28c2bc26` (documentation-only); latest code-bearing head: `974b8a88754f4ce2a18655a09aa75954b148bfbc`.
+- PR #10 is OPEN, DRAFT and unmerged, based on PR #8. Current PR #10 branch head: `2f4994b7e35b75630bc35476641de8406d7eb06d` (documentation-only); latest code-bearing head: `974b8a88754f4ce2a18655a09aa75954b148bfbc`.
 - PR #10 includes KDF parameter validation, key cleanup, AES-256 key/payload validation, recovery-key validation, production HTTPS-only API target policy (loopback-only HTTP in dev, exact `/api/v1` path, no URL credentials/query/fragment), Second Brain tag parsing fix, committed lockfile, dependency updates, and 19 unit tests (new API-policy tests awaiting CI on latest code head).
 - Previously verified CI run #42455136589 passed on code-bearing head `a4527e4098f0ae2816620b3bd3e18b8130ecb64`: clean `npm ci`, dependency audit enforcement, Vue/TypeScript typecheck, 17/17 unit tests and Vite production build. The latest API-target tightening commits are awaiting fresh CI confirmation.
 - Android smoke run #42455136623 passed on the immediately preceding code-bearing head `a4527e4098f0ae2816620b3bd3e18b8130ecb64`. The latest API-target tightening requires a fresh packaging run before claiming the current head is green. It uses `https://api.invalid.example/api/v1`; it cannot log in or sync.
