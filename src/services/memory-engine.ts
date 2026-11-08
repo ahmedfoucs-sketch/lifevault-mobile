@@ -168,7 +168,7 @@ export function cleanTags(tags: string[] | undefined): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const raw of tags ?? []) {
-    const t = raw.replace(/^#/, "").trim().slice(0, 40);
+    const t = raw.trim().replace(/^#/, "").trim().slice(0, 40);
     const k = normalize(t);
     if (t && !seen.has(k)) {
       seen.add(k);
