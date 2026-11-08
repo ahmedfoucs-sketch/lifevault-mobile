@@ -11,6 +11,7 @@ const dec = new TextDecoder();
 
 export const KDF_ITERATIONS = 600_000;
 export const IV_LENGTH = 12;
+const GCM_TAG_LENGTH_BYTES = 16;
 
 // HKDF info strings — MUST MATCH the web client exactly
 export const HKDF_AUTH_KEY_INFO = "lifevault-auth-v1";
@@ -50,6 +51,12 @@ export async function deriveMasterKey(
   salt: Uint8Array,
   iterations: number = KDF_ITERATIONS
 ): Promise<Uint8Array> {
+  if (!Number.isInteger(iterations) || iterations < 1) {
+    throw new RangeError("PBKDF2 iterations must be a positive integer");
+  }
+  if (salt.length < 16 || salt.length > 64) {
+    throw new RangeError("PBKDF2 salt must contain 16 to 64 bytes");
+  }
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
     bs(enc.encode(password.normalize("NFKC"))),
@@ -82,7 +89,7 @@ export async function seal(rawKey: Uint8Array, data: Uint8Array, aad: string): P
   const key = await crypto.subtle.importKey("raw", bs(rawKey), "AES-GCM", false, ["encrypt"]);
   const ct = new Uint8Array(
     await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv: bs(iv), additionalData: bs(enc.encode(aad)) },
+      { name: "AES-GCM", iv: bs(iv), additionalData: bs(enc.encode(aad)), tagLength: 128 },
       key,
       bs(data)
     )
@@ -94,12 +101,15 @@ export async function seal(rawKey: Uint8Array, data: Uint8Array, aad: string): P
 }
 
 export async function open(rawKey: Uint8Array, blob: Uint8Array, aad: string): Promise<Uint8Array> {
+  if (blob.length < IV_LENGTH + GCM_TAG_LENGTH_BYTES) {
+    throw new Error("Invalid AES-GCM payload: truncated IV or authentication tag");
+  }
   const key = await crypto.subtle.importKey("raw", bs(rawKey), "AES-GCM", false, ["decrypt"]);
   const iv = blob.slice(0, IV_LENGTH);
   const ct = blob.slice(IV_LENGTH);
   return new Uint8Array(
     await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: bs(iv), additionalData: bs(enc.encode(aad)) },
+      { name: "AES-GCM", iv: bs(iv), additionalData: bs(enc.encode(aad)), tagLength: 128 },
       key,
       bs(ct)
     )
@@ -168,6 +178,7 @@ export function generateRecoveryKey(): { secret: Uint8Array; display: string } {
 
 export function parseRecoveryKey(display: string): Uint8Array {
   const clean = display.replace(/[\s-]/g, "").toUpperCase();
+  if (clean.length !== 52) throw new Error("Invalid recovery key length");
   const bytes: number[] = [];
   let bits = 0, value = 0;
   for (const ch of clean) {
@@ -180,7 +191,10 @@ export function parseRecoveryKey(display: string): Uint8Array {
       bits -= 8;
     }
   }
-  return new Uint8Array(bytes.slice(0, 32));
+  if (bits !== 4 || (value & 0x0f) !== 0) throw new Error("Invalid recovery key padding");
+  const result = new Uint8Array(bytes.slice(0, 32));
+  if (result.length !== 32) throw new Error("Invalid recovery key payload");
+  return result;
 }
 
 export function wipe(...arrays: Uint8Array[]) {
@@ -197,7 +211,7 @@ const eq = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((v
 
 /**
  * Round-trip self-test. Proves internal consistency (and that WebCrypto works
- * on this device). It does NOT prove byte-compatibility with the web client —
+ * on this device). It does NOT prove byte-compatibility with the web client — 
  * the definitive test is logging in against the real server and decrypting an
  * item that the web client created.
  */
@@ -220,8 +234,8 @@ export async function verifyCompatibility(): Promise<CompatReport> {
 
   await run("PBKDF2 deterministic + NFKC", async () => {
     const a = await deriveMasterKey("pässword", salt, 1000);
-    const b = await deriveMasterKey("pässword", salt, 1000); // decomposed form
-    const c = await deriveMasterKey("pässword", salt, 1000); // precomposed form
+    const b = await deriveMasterKey("pässword", salt, 1000);
+    const c = await deriveMasterKey("pässword", salt, 1000);
     return a.length === 32 && eq(a, c) && eq(a, b);
   });
 
