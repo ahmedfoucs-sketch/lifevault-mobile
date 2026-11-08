@@ -119,3 +119,52 @@ This addendum supersedes any earlier statement in this file that Android run #42
 4. Complete backup/restore and independent security review; validate notification delivery and iOS separately.
 5. Keep all PRs draft/unmerged until acceptance gates pass; no auto-merge.
 
+
+
+## Backend source assessment — user-supplied FastAPI file, 2026-11-08
+
+Scope: reviewed the single pasted Python file declaring LifeVault AI Server v3.4.0-Final. The file has not yet been received as a complete backend repository/archive, so imports, database modules, migrations, dependency versions, deployment configuration and runtime behavior remain unverified. This review does not certify the backend.
+
+### Client/server contract comparison
+The current mobile integration branch uses `src/services/api-client.ts` and expects:
+- `POST /api/v1/auth/prelogin`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/2fa/setup`, `/enable`, `/disable`
+- `POST /api/v1/auth/password/forgot`, `/begin`, `/reset`
+- `POST /api/v1/sync/push`
+- `GET /api/v1/sync/pull?since=...&limit=...`
+- recovery rotation endpoint is explicitly marked unverified in the client.
+
+The supplied file defines memory, AI, knowledge upload and sacred prayer-time endpoints, but does not define the required auth/prelogin/login, 2FA, password recovery, sync push/pull, session revocation, or recovery-rotation endpoints. It therefore cannot currently serve as the mobile app's backend contract.
+
+### Blocking security findings
+1. A hard-coded master encryption key is present in source. Treat it as compromised; remove it from code, rotate/re-key any affected data design, and use a proper secret/key-management approach. Do not repeat or reuse the literal.
+2. CORS is configured with wildcard origins, credentials enabled, and wildcard methods/headers. Replace with an explicit allow-list per environment; do not deploy as-is.
+3. Memory add/search/update/delete and AI ask endpoints have no authentication or user/tenant scoping in this file. Knowledge upload and AI test/status are also exposed without auth controls. This creates a critical private-data exposure risk if network-accessible.
+4. The file initializes SQLite tables for family, vault and links, but does not provide their CRUD/sync/auth routes. Table creation is not proof of working Family/Vault/Links modules.
+5. No server-side identity, password verification, MFA enforcement, role authorization, session expiry/revocation, tenant isolation, rate limiting, audit trail, or encrypted sync protocol is implemented in the supplied file.
+6. Uploaded knowledge files have no explicit size/content-type policy or per-user authorization; temporary-file cleanup is not protected by a finally block if processing fails.
+7. External AI provider integration sends prompts and memory context to Gemini when configured. Data classification, consent, redaction and provider disclosure controls are not shown. Local Ollama fallback is optional, not proof of fully sovereign operation.
+
+### Additional implementation gaps / correctness risks
+- Optional imports (`memory.vector_memory`, `memory.knowledge_base`, `memory.memory_routes`) and their schemas/contracts were not supplied; their behavior cannot be assumed.
+- The file creates SQLite databases directly but supplies no migrations, backup/restore process, concurrency policy, or retention/deletion guarantees.
+- Voice recognition is only imported and flagged as available; no voice API route is shown.
+- The title claims Family, Vault and Links, but the pasted file only creates tables for them; there are no corresponding API routers/endpoints here.
+- `SacredRequest.timezone` is accepted but the calculation path uses numeric offset/local server timezone; the named timezone is not applied.
+- Daily-briefing intent detection includes broad phrase matching (including "عندنا"), which can misclassify ordinary questions as briefing requests.
+- No request-size limits, API schema/version compatibility tests, or automated security tests are included in the supplied source.
+
+### Decision
+- Classification: INCOMPLETE BACKEND CANDIDATE — NOT SAFE FOR REAL PERSONAL DATA OR PUBLIC DEPLOYMENT.
+- Do not connect the mobile client, expose this service publicly, or enter real personal/family/financial/credential data.
+- No secrets from the pasted source were copied into this repository.
+- No backend code was executed, deployed, or modified. No production or infrastructure changes were made.
+
+### Required next inputs / actions
+1. Obtain the complete authoritative backend source, including the `memory/` modules, requirements/lock file, database schema/migrations, startup instructions, and environment-variable example with names only.
+2. Confirm whether this pasted file is the current server entrypoint and identify its intended private/non-production repository or archive.
+3. Implement the client-required auth and sync contract before attempting app integration.
+4. Perform threat modeling and security remediation, then automated API tests for unauthenticated access, tenant isolation, MFA/session lifecycle, ciphertext integrity, revision conflicts, rate limits, upload limits, audit and recovery.
+5. Validate only against disposable test accounts/data and an explicitly authorized HTTPS staging host.
+
