@@ -79,3 +79,13 @@ Do not merge PR #8 or PR #10 and do not call LifeVault production-ready until:
 6. Physical Android and iOS acceptance gates are completed.
 7. Independent security review is complete.
 8. The owner explicitly approves release/merge.
+
+
+## Follow-up verification — 2026-11-08 12:46 Asia/Riyadh
+
+- PR #10 current branch head: `222153c894cb053b876d0d180fb39b7e0c6b09a9`; this latest commit is documentation-only.
+- Latest verified code-bearing parent: `a4527e4098f0ae2816620b3bd3e18b8130ecb64`.
+- CI run [42455136589](https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42455136589): **SUCCESS**; clean dependency install, audit enforcement, typecheck, 17/17 unit tests and Vite production build.
+- Android smoke run [42455136623](https://github.com/ahmedfoucs-sketch/lifevault-mobile/actions/runs/42455136623): **SUCCESS**; Java 21 setup, exact dependency install, Vite build with reserved non-routable API, Capacitor generation/sync, Gradle `assembleDebug`, APK verification and artifact upload.
+- Both runs were rechecked through GitHub job results on 2026-11-08. The latest documentation-only commit itself has not been separately rerun; no source-code changes are included in it.
+- This does not replace physical Android UAT or validate login/sync. The APK uses `https://api.invalid.example/api/v1` and cannot reach a backend.
