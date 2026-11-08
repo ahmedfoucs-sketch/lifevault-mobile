@@ -67,3 +67,13 @@ Android packaging is green in GitHub Actions, but no physical-device acceptance 
 ## AI COMMAND CENTER boundary
 
 LifeVault remains an independent application and data boundary. The Command Center may link to an approved production URL and consume privacy-safe operational metadata only; it must not share cookies, tokens, databases or vault contents.
+
+
+## Additional API target validation — 2026-11-08
+
+The hardening branch now validates the API base more strictly:
+- HTTPS is required outside Vite development.
+- Development HTTP is accepted only for loopback hosts (`localhost`, `127.0.0.1`, `[::1]`); remote/LAN HTTP is rejected.
+- The base path must be exactly `/api/v1` (optional trailing slash is normalized).
+- Embedded URL credentials, query strings and fragments are rejected.
+- These checks validate configuration shape only; they do not prove the host exists, its TLS certificate is valid, or the backend contract/security is correct.
